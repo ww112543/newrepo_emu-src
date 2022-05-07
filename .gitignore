@@ -4,6 +4,7 @@ doc-build/
 
 # For compare
 current/
+upstream-pinapple/
 
 # Generated source files
 src/common/scm_rev.cpp
