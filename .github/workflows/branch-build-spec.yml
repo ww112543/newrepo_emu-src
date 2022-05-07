@@ -11,4 +11,4 @@ on:
 
 jobs:
   build-msvc:
-    uses: .github/workflows/build-msvc-new.yml@early-access
+    uses: ./.github/workflows/build-msvc-new.yml
