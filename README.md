@@ -1,7 +1,9 @@
 yuzu emulator early access
 =============
 
-This is the source code for early-access 2721.
+This is the source code for early-access.
+
+This repository was forked from [pineappleEA/pineapple-src](https://github.com/pineappleEA/pineapple-src).
 
 ## Legal Notice
 
