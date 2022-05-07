@@ -1,7 +1,7 @@
 name: Auto check update
 
 on:
-  push:
+# push:
 #   branches:
 #     - early-access
 
