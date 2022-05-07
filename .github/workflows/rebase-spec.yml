@@ -1,0 +1,25 @@
+name: Automatic Rebase
+
+on:
+  push:
+    branches:
+      - early-access
+    tags:        
+      - '**'
+
+jobs:
+  rebase:
+    name: Automatic Rebase
+    runs-on: ubuntu-latest
+    steps:
+      - name: actions/checkout
+        uses: actions/checkout@v2
+        with:
+          token : ${{ secrets.PAT }}
+
+      - name: ReSync Branch
+        uses: Joao208/resync-branch@1.5.0
+        with:
+          PERSONAL_TOKEN: ${{ secrets.PAT }}
+          BRANCH_NAME: revent-gc-shader-ci
+          DEFAULT_BRANCH: ${{github.event.repository.default_branch}}

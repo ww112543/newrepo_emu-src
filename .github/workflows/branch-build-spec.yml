@@ -1,0 +1,14 @@
+name: Branch build
+
+on:
+  push:
+    branches:
+      - revent-gc-shader-ci
+    paths-ignore:
+      - '.github/**'
+
+  workflow_dispatch:
+
+jobs:
+  build-msvc:
+    uses: .github/workflows/build-msvc-new.yml

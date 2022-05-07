@@ -1,0 +1,116 @@
+name: yuzu Build MSVC
+
+on:
+  workflow_call:
+
+jobs:
+  build:
+    name: Building yuzu Binaries with MSVC
+    runs-on: windows-latest
+    env:
+      CONAN_USER_HOME: "${{ github.workspace }}/conan/"
+      CONAN_USER_HOME_SHORT: "${{ github.workspace }}/conan/short"
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - name: actions/checkout
+        uses: actions/checkout@v2
+
+      #Generate submodules list
+      - name: Generate submodules list
+        run: |
+          git submodule > modulehash.txt && echo Completed
+          echo Completed
+        shell: cmd
+
+      #Making directory
+      - name: Making directory
+        run: |
+          echo Making directory
+          mkdir build
+        shell: pwsh
+
+      #Set short SHA
+      - name: Set short SHA outputs
+        id: vars
+        run: echo "::set-output name=sha_short::$(git rev-parse --short HEAD)" && echo Completed
+        shell: pwsh
+
+      #Cache Conan modules
+      - name: Cache Conan modules
+        id: github-cache-conan
+        uses: actions/cache@v3
+        env:
+          cache-name: cache-conan-modules
+        with:
+          path: ${{ env.CONAN_USER_HOME }}
+          key: host-${{ runner.os }}-target-${{ env.cache-name }}-${{ hashFiles('CMakeLists.txt') }}
+          restore-keys: host-${{ runner.os }}-target-${{ env.cache-name }}-
+
+      #Install Vulkan SDK
+      - name: Prepare Vulkan SDK
+        uses: humbletim/setup-vulkan-sdk@v1.2.0
+        with:
+          vulkan-query-version: 1.3.211.0
+          vulkan-components: Vulkan-Headers, Glslang
+          vulkan-use-cache: true
+
+      #Install CMake
+      - name: Install CMake
+        uses: lukka/get-cmake@latest
+
+      #Adding MSBuild
+      - name: Add msbuild to PATH
+        uses: microsoft/setup-msbuild@v1.1
+        with:
+          msbuild-architecture: x64
+
+      #Building with CMake and Ninja
+      - name: Generating Project using CMake and Ninja
+        uses: seanmiddleditch/gha-setup-ninja@master
+
+      #Preparing Build
+      - name: Before Build
+        run: |
+          cd build && echo Build
+          echo Build
+          pip install conan --upgrade
+          cmake --version
+          cmake .. -G "Visual Studio 17 2022" -A x64 -DYUZU_USE_BUNDLED_QT=1 -DYUZU_USE_BUNDLED_SDL2=1 -DYUZU_USE_QT_WEB_ENGINE=ON -DYUZU_TESTS=OFF -DUSE_DISCORD_PRESENCE=ON -DTITLE_BAR_FORMAT_IDLE="yuzu Early Access ${{ github.ref_name }}-${{ steps.vars.outputs.sha_short }}" -DTITLE_BAR_FORMAT_RUNNING="yuzu Early Access ${{ github.ref_name }}-${{ steps.vars.outputs.sha_short }} | {3}" -DENABLE_COMPATIBILITY_LIST_DOWNLOAD=ON -DENABLE_QT_TRANSLATION=ON -DCMAKE_BUILD_TYPE=Release
+        shell: pwsh
+
+      #Cache files
+      - name: Cache libraries and files
+        uses: ./.github/workflows/stript/cache_files
+
+      #Build the .sln
+      - name: Build app for release
+        run: msbuild build\yuzu.sln /p:WarningLevel=0 /p:Configuration=Release
+
+      - name: After Build
+        run: |
+          mkdir ${{ github.workspace }}\build\bin\yuzu-build\yuzu-${{ steps.vars.outputs.sha_short }}-msvc
+          mv ${{ github.workspace }}\build\bin\Release ${{ github.workspace }}\build\bin\yuzu-build\yuzu-${{ steps.vars.outputs.sha_short }}-msvc
+          del ${{ github.workspace }}\build\bin\yuzu-build\yuzu-${{ steps.vars.outputs.sha_short }}-msvc\Release\*.pdb
+        shell: pwsh
+
+      - name: Compress the Build Folder
+        run: |
+          7z a -t7z "yuzu-ea-${{ github.ref_name }}-${{ steps.vars.outputs.sha_short }}.7z" -m0=lzma2:d=64m -mx=9 -aoa -mfb=64 -md=32m -ms=on "${{ github.workspace }}\build\bin\yuzu-build"
+        shell: pwsh
+          
+      #Upload Artifacts
+      - name: Making artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: yuzu-ea-${{ steps.vars.outputs.sha_short }}
+          path: yuzu-ea-${{ github.ref_name }}-${{ steps.vars.outputs.sha_short }}.7z
+          retention-days: 7
+
+#     #Publishing to Release
+#     - name: Release to GitHub Releases
+#       uses: softprops/action-gh-release@v1
+#       with:
+#         name: EA${{ github.event.head_commit.message }}
+#         tag_name: EA${{ github.event.head_commit.message }}
+#         body: "Yuzu Early Access CI Builds with Github Actions [Current Build: yuzu Early Access ${{ github.event.head_commit.message }}]"
+#         files: ${{ github.workspace }}\yuzu-early-access-EA${{ github.event.head_commit.message }}.zip

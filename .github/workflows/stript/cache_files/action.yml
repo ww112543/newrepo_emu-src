@@ -1,0 +1,99 @@
+name: 'Cache files'
+description: 'Cache files'
+runs:
+  using: "composite"
+  steps:
+    #Setup envirionment variable
+    - name: Setup envirionment variable
+      run: |
+        echo Set envirionmnet variable
+        echo "cmake-main=${{ hashFiles('src/CMakeLists.txt') }}" >> $GITHUB_ENV && echo Completed
+        echo "cache-main=cache-main-lib" >> $GITHUB_ENV && echo Completed
+      shell: bash
+
+    #Cache main libraries
+    - name: Cache main libraries audio_core
+      uses: actions/cache@v3
+      with:
+        path: |
+          ./build/src/audio_core/**/*.lib
+          ./build/src/audio_core/**/*.obj
+        key: host-${{ runner.os }}-target-${{ env.cache-main }}-${{ env.cmake-main }}-${{ hashFiles('src/audio_core/**/*.*') }}
+    - name: Cache main libraries common
+      uses: actions/cache@v3
+      with:
+        path: |
+          ./build/src/common/**/*.lib
+          ./build/src/common/**/*.obj
+        key: host-${{ runner.os }}-target-${{ env.cache-main }}-${{ env.cmake-main }}-${{ hashFiles('src/common/**/*.*') }}
+    - name: Cache main libraries core
+      uses: actions/cache@v3
+      with:
+        path: |
+          ./build/src/core/**/*.lib
+          ./build/src/core/**/*.obj
+        key: host-${{ runner.os }}-target-${{ env.cache-main }}-${{ env.cmake-main }}-${{ hashFiles('src/core/**/*.*') }}
+    - name: Cache main libraries input_common
+      uses: actions/cache@v3
+      with:
+        path: |
+          ./build/src/input_common/**/*.lib
+          ./build/src/input_common/**/*.obj
+        key: host-${{ runner.os }}-target-${{ env.cache-main }}-${{ env.cmake-main }}-${{ hashFiles('src/input_common/**/*.*') }}
+    - name: Cache main libraries shader_recompiler
+      uses: actions/cache@v3
+      with:
+        path: |
+          ./build/src/shader_recompiler/**/*.lib
+          ./build/src/shader_recompiler/**/*.obj
+        key: host-${{ runner.os }}-target-${{ env.cache-main }}-${{ env.cmake-main }}-${{ hashFiles('src/shader_recompiler/**/*.*') }}
+    - name: Cache main libraries tests
+      uses: actions/cache@v3
+      with:
+        path: |
+          ./build/src/tests/**/*.lib
+          ./build/src/tests/**/*.obj
+        key: host-${{ runner.os }}-target-${{ env.cache-main }}-${{ env.cmake-main }}-${{ hashFiles('src/tests/**/*.*') }}
+    - name: Cache main libraries video_core
+      uses: actions/cache@v3
+      with:
+        path: |
+          ./build/src/video_core/**/*.lib
+          ./build/src/video_core/**/*.obj
+        key: host-${{ runner.os }}-target-${{ env.cache-main }}-${{ env.cmake-main }}-${{ hashFiles('src/video_core/**/*.*') }}
+    - name: Cache main libraries web_service
+      uses: actions/cache@v3
+      with:
+        path: |
+          ./build/src/web_service/**/*.lib
+          ./build/src/web_service/**/*.obj
+        key: host-${{ runner.os }}-target-${{ env.cache-main }}-${{ env.cmake-main }}-${{ hashFiles('src/web_service/**/*.*') }}
+    - name: Cache main libraries yuzu
+      uses: actions/cache@v3
+      with:
+        path: |
+          ./build/src/yuzu/**/*.lib
+          ./build/src/yuzu/**/*.obj
+        key: host-${{ runner.os }}-target-${{ env.cache-main }}-${{ env.cmake-main }}-${{ hashFiles('src/yuzu/**/*.*') }}
+    - name: Cache main libraries yuzu_cmd
+      uses: actions/cache@v3
+      with:
+        path: |
+          ./build/src/yuzu_cmd/**/*.lib
+          ./build/src/yuzu_cmd/**/*.obj
+        key: host-${{ runner.os }}-target-${{ env.cache-main }}-${{ env.cmake-main }}-${{ hashFiles('src/yuzu_cmd/**/*.*') }}
+
+    #Cache external libraries
+    - name: Cache external libraries
+      uses: actions/cache@v3
+      env:
+        cache-name: cache-ext-lib
+      with:
+        path: |
+          ./build/externals/**/Release/*.lib
+          ./build/externals/**/Release/*.pdb
+          ./build/externals/**/*.obj
+          !./build/externals/qt-5.15.2-msvc2019_64/
+          !./build/externals/SDL2-2.0.18/
+          !./build/externals/ffmpeg-4.4/
+        key: host-${{ runner.os }}-target-${{ env.cache-name }}-${{ hashFiles('modulehash.txt') }}-v2
