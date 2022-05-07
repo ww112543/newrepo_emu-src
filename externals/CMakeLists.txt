@@ -1,0 +1,126 @@
+# Definitions for all external bundled libraries
+
+list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/CMakeModules")
+list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/externals/find-modules")
+include(DownloadExternals)
+
+# xbyak
+if (ARCHITECTURE_x86 OR ARCHITECTURE_x86_64)
+    add_library(xbyak INTERFACE)
+    file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/xbyak/include)
+    file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/xbyak/xbyak DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/xbyak/include)
+    target_include_directories(xbyak SYSTEM INTERFACE ${CMAKE_CURRENT_BINARY_DIR}/xbyak/include)
+    target_compile_definitions(xbyak INTERFACE XBYAK_NO_OP_NAMES)
+endif()
+
+# Dynarmic
+if (ARCHITECTURE_x86_64)
+    set(DYNARMIC_TESTS OFF)
+    set(DYNARMIC_NO_BUNDLED_FMT ON)
+    set(DYNARMIC_IGNORE_ASSERTS ON CACHE BOOL "" FORCE)
+    add_subdirectory(dynarmic)
+endif()
+
+# getopt
+if (MSVC)
+    add_subdirectory(getopt)
+endif()
+
+# Glad
+add_subdirectory(glad)
+
+# inih
+add_subdirectory(inih)
+
+# mbedtls
+add_subdirectory(mbedtls EXCLUDE_FROM_ALL)
+target_include_directories(mbedtls PUBLIC ./mbedtls/include)
+
+# MicroProfile
+add_library(microprofile INTERFACE)
+target_include_directories(microprofile INTERFACE ./microprofile)
+
+# libusb
+if (NOT LIBUSB_FOUND OR YUZU_USE_BUNDLED_LIBUSB)
+    add_subdirectory(libusb)
+endif()
+
+# SDL2
+if (YUZU_USE_EXTERNAL_SDL2)
+    if (NOT WIN32)
+        # Yuzu itself needs: Atomic Audio Events Joystick Haptic Sensor Threads Timers
+        # Since 2.0.18 Atomic+Threads required for HIDAPI/libusb (see https://github.com/libsdl-org/SDL/issues/5095)
+        # Yuzu-cmd also needs: Video (depends on Loadso/Dlopen)
+        set(SDL_UNUSED_SUBSYSTEMS
+            CPUinfo File Filesystem
+            Locale Power Render)
+        foreach(_SUB ${SDL_UNUSED_SUBSYSTEMS})
+          string(TOUPPER ${_SUB} _OPT)
+          option(SDL_${_OPT} "" OFF)
+        endforeach()
+
+        option(HIDAPI "" ON)
+    endif()
+    set(SDL_STATIC ON)
+    set(SDL_SHARED OFF)
+
+    add_subdirectory(SDL EXCLUDE_FROM_ALL)
+    add_library(SDL2 ALIAS SDL2-static)
+endif()
+
+# Cubeb
+if(ENABLE_CUBEB)
+    set(BUILD_TESTS OFF CACHE BOOL "")
+    add_subdirectory(cubeb EXCLUDE_FROM_ALL)
+endif()
+
+# DiscordRPC
+if (USE_DISCORD_PRESENCE)
+    add_subdirectory(discord-rpc EXCLUDE_FROM_ALL)
+    target_include_directories(discord-rpc INTERFACE ./discord-rpc/include)
+endif()
+
+# Sirit
+add_subdirectory(sirit)
+
+if (ENABLE_WEB_SERVICE)
+    find_package(OpenSSL 1.1)
+    if (OPENSSL_FOUND)
+        set(OPENSSL_LIBRARIES OpenSSL::SSL OpenSSL::Crypto)
+    else()
+        # LibreSSL
+        set(LIBRESSL_SKIP_INSTALL ON CACHE BOOL "")
+        set(OPENSSLDIR "/etc/ssl/")
+        add_subdirectory(libressl EXCLUDE_FROM_ALL)
+        target_include_directories(ssl INTERFACE ./libressl/include)
+        target_compile_definitions(ssl PRIVATE -DHAVE_INET_NTOP)
+        get_directory_property(OPENSSL_LIBRARIES
+            DIRECTORY libressl
+            DEFINITION OPENSSL_LIBS)
+    endif()
+
+    # httplib
+    add_library(httplib INTERFACE)
+    target_include_directories(httplib INTERFACE ./cpp-httplib)
+    target_compile_definitions(httplib INTERFACE -DCPPHTTPLIB_OPENSSL_SUPPORT)
+    target_link_libraries(httplib INTERFACE ${OPENSSL_LIBRARIES})
+    if (WIN32)
+        target_link_libraries(httplib INTERFACE crypt32 cryptui ws2_32)
+    endif()
+endif()
+
+# Opus
+if (YUZU_USE_BUNDLED_OPUS)
+    add_subdirectory(opus EXCLUDE_FROM_ALL)
+else()
+    find_package(opus 1.3 REQUIRED)
+endif()
+
+# FFMpeg
+if (YUZU_USE_BUNDLED_FFMPEG)
+    add_subdirectory(ffmpeg)
+    set(FFmpeg_PATH "${FFmpeg_PATH}" PARENT_SCOPE)
+    set(FFmpeg_LDFLAGS "${FFmpeg_LDFLAGS}" PARENT_SCOPE)
+    set(FFmpeg_LIBRARIES "${FFmpeg_LIBRARIES}" PARENT_SCOPE)
+    set(FFmpeg_INCLUDE_DIR "${FFmpeg_INCLUDE_DIR}" PARENT_SCOPE)
+endif()
