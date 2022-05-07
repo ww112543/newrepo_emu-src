@@ -13,6 +13,7 @@ on:
 jobs:
   build:
     name: Checking update
+    if: ${{ github.ref_name == 'early-access' }}
     runs-on: ubuntu-latest
 
     steps:
