@@ -2,8 +2,6 @@ name: Automatic Rebase
 
 on:
   push:
-    branches:
-      - early-access
     tags:        
       - '**'
 
