@@ -43,7 +43,8 @@ jobs:
         id: eaver
         run: |
           cd upstream-pinapple
-          echo "::set-output name=ver::$(git describe --tags $(git rev-list --tags --max-count=1))"
+          commit="$(git rev-list --tags --max-count=1)"
+          echo "::set-output name=ver::$(git describe --tags $commit)"
 
       - name: Commit to remote
         uses: stefanzweifel/git-auto-commit-action@v4
