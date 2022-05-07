@@ -171,7 +171,6 @@ struct InstanceDispatch {
     PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR{};
     PFN_vkGetPhysicalDeviceFormatProperties vkGetPhysicalDeviceFormatProperties{};
     PFN_vkGetPhysicalDeviceMemoryProperties vkGetPhysicalDeviceMemoryProperties{};
-    PFN_vkGetPhysicalDeviceMemoryProperties2 vkGetPhysicalDeviceMemoryProperties2{};
     PFN_vkGetPhysicalDeviceProperties vkGetPhysicalDeviceProperties{};
     PFN_vkGetPhysicalDeviceProperties2KHR vkGetPhysicalDeviceProperties2KHR{};
     PFN_vkGetPhysicalDeviceQueueFamilyProperties vkGetPhysicalDeviceQueueFamilyProperties{};
@@ -950,8 +949,7 @@ public:
 
     std::vector<VkPresentModeKHR> GetSurfacePresentModesKHR(VkSurfaceKHR) const;
 
-    VkPhysicalDeviceMemoryProperties2 GetMemoryProperties(
-        void* next_structures = nullptr) const noexcept;
+    VkPhysicalDeviceMemoryProperties GetMemoryProperties() const noexcept;
 
 private:
     VkPhysicalDevice physical_device = nullptr;

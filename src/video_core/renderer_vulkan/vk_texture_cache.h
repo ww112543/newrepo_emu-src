@@ -54,10 +54,6 @@ public:
 
     u64 GetDeviceLocalMemory() const;
 
-    u64 GetDeviceMemoryUsage() const;
-
-    bool CanReportMemoryUsage() const;
-
     void BlitImage(Framebuffer* dst_framebuffer, ImageView& dst, ImageView& src,
                    const Region2D& dst_region, const Region2D& src_region,
                    Tegra::Engines::Fermi2D::Filter filter,

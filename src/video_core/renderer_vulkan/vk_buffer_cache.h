@@ -64,12 +64,6 @@ public:
 
     void Finish();
 
-    u64 GetDeviceLocalMemory() const;
-
-    u64 GetDeviceMemoryUsage() const;
-
-    bool CanReportMemoryUsage() const;
-
     [[nodiscard]] StagingBufferRef UploadStagingBuffer(size_t size);
 
     [[nodiscard]] StagingBufferRef DownloadStagingBuffer(size_t size);

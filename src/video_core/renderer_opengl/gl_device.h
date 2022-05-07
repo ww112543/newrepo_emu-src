@@ -19,8 +19,6 @@ public:
 
     [[nodiscard]] std::string GetVendorName() const;
 
-    u64 GetCurrentDedicatedVideoMemory() const;
-
     u32 GetMaxUniformBuffers(Shader::Stage stage) const noexcept {
         return max_uniform_buffers[static_cast<size_t>(stage)];
     }
@@ -169,10 +167,6 @@ public:
         return vendor_name == "ATI Technologies Inc.";
     }
 
-    bool CanReportMemoryUsage() const {
-        return can_report_memory;
-    }
-
 private:
     static bool TestVariableAoffi();
     static bool TestPreciseBug();
@@ -215,7 +209,6 @@ private:
     bool need_fastmath_off{};
     bool has_cbuf_ftou_bug{};
     bool has_bool_ref_bug{};
-    bool can_report_memory{};
 
     std::string vendor_name;
 };

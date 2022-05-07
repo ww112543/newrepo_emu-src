@@ -226,7 +226,7 @@ void MemoryCommit::Release() {
 }
 
 MemoryAllocator::MemoryAllocator(const Device& device_, bool export_allocations_)
-    : device{device_}, properties{device_.GetPhysical().GetMemoryProperties().memoryProperties},
+    : device{device_}, properties{device_.GetPhysical().GetMemoryProperties()},
       export_allocations{export_allocations_},
       buffer_image_granularity{
           device_.GetPhysical().GetProperties().limits.bufferImageGranularity} {}
