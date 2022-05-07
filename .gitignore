@@ -2,6 +2,9 @@
 [Bb]uild/
 doc-build/
 
+# For compare
+current/
+
 # Generated source files
 src/common/scm_rev.cpp
 .travis.descriptor.json
