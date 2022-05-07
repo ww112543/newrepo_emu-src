@@ -1,0 +1,62 @@
+name: Auto check update
+
+on:
+  push:
+#   branches:
+#     - early-access
+
+  schedule:
+    - cron: "5 */3 * * *"
+
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Checking update
+    runs-on: ubuntu-latest
+
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - name: actions/checkout
+        uses: actions/checkout@v2
+        with:
+          path: './current'
+          ref : ${{ github.head_ref }}
+          token : ${{ secrets.PAT }}
+
+      - name: Cloneing upstream repository
+        uses: actions/checkout@v2
+        with:
+          repository: 'pineappleEA/pineapple-src'
+          path: './upstream-pinapple'
+
+      - name: Copy to current repository
+        run: |
+          rsync -rlcih --size-only --progress --stats --exclude='README.md' --exclude='.gitattributes' --exclude='.gitignore' --exclude='.git/' --exclude='.github/' --delete ./upstream-pinapple/ ./current
+
+      - name: Get current day
+        id: date
+        run: |
+          echo "::set-output name=date::$(date +'%Y-%m-%d %H:%M:%S')"
+
+      - name: Get Early access number
+        id: eaver
+        run: |
+          cd upstream-pinapple
+          echo "::set-output name=ver::$(git describe --tags $(git rev-list --tags --max-count=1))"
+
+      - name: Commit to remote
+        uses: stefanzweifel/git-auto-commit-action@v4
+        with: 
+          repository: ./current
+          commit_message: Automated Change at ${{ steps.date.outputs.date }}
+          commit_options: '-m "${{ steps.eaver.outputs.ver }}"'
+          commit_author: github-actions[bot] <github-actions[bot]@users.noreply.github.com>
+
+      - name: "Run if changes have been detected"
+        if: steps.git-auto-commit-action.outputs.changes_detected == 'true'
+        run: echo "Changes! Commit hash ${{ steps.auto-commit-action.outputs.commit_hash }}"
+
+      - name: "Run if no changes have been detected"
+        if: steps.git-auto-commit-action.outputs.changes_detected == 'false'
+        run: echo "Nothing Changes!"
