@@ -1,14 +1,20 @@
-name: Branch build
+name: Branch build test
 
 on:
   push:
     branches:
-      - revent-gc-shader-ci
-    paths-ignore:
-      - '.github/**'
+      - test-auto-commit
+#   paths-ignore:
+#     - '.github/**'
 
   workflow_dispatch:
 
 jobs:
   build-msvc:
-    uses: ./.github/workflows/build-msvc-new.yml
+#   uses: ./.github/workflows/build-msvc-new.yml
+    name: Test build
+    runs-on: ubuntu-latest
+    steps:
+      - name: echo
+        run: |
+          echo "This should be call when rebased"
