@@ -9,6 +9,13 @@ on:
 
   workflow_dispatch:
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build-msvc:
     uses: ./.github/workflows/build-msvc-new.yml
+
+  build-mingw:
+    uses: ./.github/workflows/build-mingw-new.yml

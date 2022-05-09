@@ -3,6 +3,8 @@ name: yuzu Build MSVC
 on:
   workflow_call:
 
+  workflow_dispatch:
+
 jobs:
   build:
     name: Building yuzu Binaries with MSVC
@@ -78,9 +80,9 @@ jobs:
           cmake .. -G "Visual Studio 17 2022" -A x64 -DYUZU_USE_BUNDLED_QT=1 -DYUZU_USE_BUNDLED_SDL2=1 -DYUZU_USE_QT_WEB_ENGINE=ON -DYUZU_TESTS=OFF -DUSE_DISCORD_PRESENCE=ON -DTITLE_BAR_FORMAT_IDLE="yuzu Early Access ${{ github.ref_name }}-${{ steps.vars.outputs.sha_short }}" -DTITLE_BAR_FORMAT_RUNNING="yuzu Early Access ${{ github.ref_name }}-${{ steps.vars.outputs.sha_short }} | {3}" -DENABLE_COMPATIBILITY_LIST_DOWNLOAD=ON -DENABLE_QT_TRANSLATION=ON -DCMAKE_BUILD_TYPE=Release
         shell: pwsh
 
-      #Cache files
-      - name: Cache libraries and files
-        uses: ./.github/workflows/stript/cache_files
+#     #Cache files
+#     - name: Cache libraries and files
+#       uses: ./.github/workflows/stript/cache_files
 
       #Build the .sln
       - name: Build app for release
@@ -95,15 +97,15 @@ jobs:
 
       - name: Compress the Build Folder
         run: |
-          7z a -t7z "yuzu-ea-${{ github.ref_name }}-${{ steps.vars.outputs.sha_short }}.7z" -m0=lzma2:d=64m -mx=9 -aoa -mfb=64 -md=32m -ms=on "${{ github.workspace }}\build\bin\yuzu-build"
+          7z a -t7z "yuzu-ea-${{ github.ref_name }}-${{ steps.vars.outputs.sha_short }}-msvc.7z" -m0=lzma2:d=64m -mx=9 -aoa -mfb=64 -md=32m -ms=on "${{ github.workspace }}\build\bin\yuzu-build"
         shell: pwsh
           
       #Upload Artifacts
       - name: Making artifact
         uses: actions/upload-artifact@v2
         with:
-          name: yuzu-ea-${{ steps.vars.outputs.sha_short }}
-          path: yuzu-ea-${{ github.ref_name }}-${{ steps.vars.outputs.sha_short }}.7z
+          name: yuzu-ea-${{ steps.vars.outputs.sha_short }}-msvc
+          path: yuzu-ea-${{ github.ref_name }}-${{ steps.vars.outputs.sha_short }}-msvc.7z
           retention-days: 7
 
 #     #Publishing to Release

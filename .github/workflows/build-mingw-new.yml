@@ -1,0 +1,178 @@
+name: yuzu Build MinGW
+
+on:
+  workflow_call:
+
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Building yuzu Binaries with MinGW
+    runs-on: windows-2019
+    env:
+      CONAN_USER_HOME: "${{ github.workspace }}/conan/"
+      CONAN_USER_HOME_SHORT: "${{ github.workspace }}/conan/short"
+      MSYS2: ${{ github.workspace }}\msys2
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - name: actions/checkout
+        uses: actions/checkout@v2
+
+      #Making directory
+      - name: Making directory
+        run: |
+          echo Making directory
+          mkdir build
+        shell: pwsh
+
+      #Set short SHA
+      - name: Set short SHA outputs
+        id: vars
+        run: echo "::set-output name=sha_short::$(git rev-parse --short HEAD)" && echo Completed
+        shell: pwsh
+
+      #Install Vulkan SDK
+      - name: Prepare Vulkan SDK
+        uses: humbletim/setup-vulkan-sdk@v1.2.0
+        with:
+          vulkan-query-version: 1.3.211.0
+          vulkan-components: Vulkan-Headers, Glslang
+          vulkan-use-cache: true
+
+      #Cache Conan modules
+      - name: Cache Conan modules
+        id: github-cache-conan
+        uses: actions/cache@v3
+        env:
+          cache-name: cache-conan-modules
+        with:
+          path: ${{ env.CONAN_USER_HOME }}
+          key: host-${{ runner.os }}-target-${{ env.cache-name }}-mingw-${{ hashFiles('CMakeLists.txt') }}
+          restore-keys: host-${{ runner.os }}-target-${{ env.cache-name }}-mingw-
+
+      #Setup MSYS2
+      - name: Setup MSYS2
+        uses: msys2/setup-msys2@v2
+        with:
+          location: ${{ env.MSYS2 }}
+          msystem: MINGW64
+          update: true
+          install: >-
+            git
+            make
+            mingw-w64-x86_64-SDL2
+            mingw-w64-x86_64-cmake
+            mingw-w64-x86_64-python-pip
+            mingw-w64-x86_64-qt5
+            mingw-w64-x86_64-toolchain
+            autoconf
+            libtool
+            automake-wrapper
+
+      #Configurate MSYS2 envirionment(cmd)
+      - name: Configurate MSYS2 envirionment(cmd)
+        run: |
+          mklink /J "${{ env.MSYS2 }}\VulkanSDK" "${{ env.VULKAN_SDK }}"
+        shell: cmd
+
+      #Configurate MSYS2 envirionment
+      - name: Configurate MSYS2 envirionment
+        run: |
+          python -m pip install conan
+          echo 'PATH=/mingw64/bin:$PATH' >> ~/.bashrc
+          echo 'PATH=$(readlink -e /VulkanSDK/bin/):$PATH' >> ~/.bashrc
+        shell: msys2 {0}
+
+      #Show the list of PATH
+      - name: List of PATH
+        run: |
+          echo $PATH
+        shell: msys2 {0}
+
+      #Preparing Build
+      #Note: qtwebengine does not support with this toolchain
+      - name: Before Build
+        run: |
+          cd build && echo Build
+          echo Build
+          cmake --version
+          cmake .. -G "MSYS Makefiles" -DYUZU_USE_BUNDLED_QT=0 -DYUZU_USE_BUNDLED_SDL2=0 -DYUZU_USE_QT_WEB_ENGINE=OFF -DYUZU_TESTS=OFF -DUSE_DISCORD_PRESENCE=ON -DTITLE_BAR_FORMAT_IDLE="yuzu Early Access ${{ github.ref_name }}-${{ steps.vars.outputs.sha_short }}" -DTITLE_BAR_FORMAT_RUNNING="yuzu Early Access ${{ github.ref_name }}-${{ steps.vars.outputs.sha_short }} | {3}" -DENABLE_COMPATIBILITY_LIST_DOWNLOAD=ON -DENABLE_QT_TRANSLATION=ON -DCMAKE_BUILD_TYPE=Release
+        shell: msys2 {0}
+
+      #-DCMAKE_EXE_LINKER_FLAGS="--enable-static -static-libgcc -static-libstdc++ -static"
+
+#     #Cache files
+#     - name: Cache libraries and files
+#       uses: ./.github/workflows/stript/cache_files
+
+      #Build with MinGW
+      - name: Build app for release
+        run: |
+          cd build
+          make -j$(nproc)
+        shell: msys2 {0}
+
+      - name: After Build
+        run: |
+          mkdir ${{ github.workspace }}\build\bin\yuzu-build\yuzu-${{ steps.vars.outputs.sha_short }}-mingw
+          mv ${{ github.workspace }}\build\bin ${{ github.workspace }}\build\bin\yuzu-build\yuzu-${{ steps.vars.outputs.sha_short }}-mingw
+        shell: pwsh
+
+      #Post copy dlls
+      - name: Post copy files
+        env:
+          MINGW64: ${{ env.MSYS2 }}\mingw64\bin
+          FFMPEG: .\build\externals\ffmpeg-4.4\bin
+          QTP: ${{ env.MSYS2 }}\mingw64\share\qt5\plugins
+        run: |
+          cd ${{ github.workspace }}\build\bin\yuzu-build\yuzu-${{ steps.vars.outputs.sha_short }}-mingw
+          set mingw64path=${{ env.MINGW64 }}
+          set ffmpegpath=${{ env.FFMPEG }}
+          set qtpluginpath=${{ env.QTP }}
+          echo. 2>> qt.conf
+          copy %mingw64path%\lib*.dll
+          copy %mingw64path%\Qt5Core.dll
+          copy %mingw64path%\Qt5Gui.dll
+          copy %mingw64path%\Qt5Network.dll
+          copy %mingw64path%\Qt5Positioning.dll
+          copy %mingw64path%\Qt5PrintSupport.dll
+          copy %mingw64path%\Qt5Qml.dll
+          copy %mingw64path%\Qt5QmlModels.dll
+          copy %mingw64path%\Qt5Quick.dll
+          copy %mingw64path%\Qt5QuickWidgets.dll
+          copy %mingw64path%\Qt5WebChannel.dll
+          copy %mingw64path%\Qt5Widgets.dll
+          copy %mingw64path%\SDL2.dll
+          copy %mingw64path%\zlib1.dll
+          copy %ffmpegpath%\*.dll
+          mkdir plugins\imageformats
+          mkdir plugins\platforms
+          mkdir plugins\styles
+          copy %qtpluginpath%\imageformats\qgif.dll .\plugins\imageformats\
+          copy %qtpluginpath%\imageformats\qjpeg.dll .\plugins\imageformats\
+          copy %qtpluginpath%\imageformats\qgif.dll .\plugins\imageformats\
+          copy %qtpluginpath%\platforms\qwindows.dll .\plugins\platforms\
+          copy %qtpluginpath%\styles\qwindowsvistastyle.dll .\plugins\styles\
+        shell: cmd
+
+      - name: Compress the Build Folder
+        run: |
+          7z a -t7z "yuzu-ea-${{ github.ref_name }}-${{ steps.vars.outputs.sha_short }}-mingw.7z" -m0=lzma2:d=64m -mx=9 -aoa -mfb=64 -md=32m -ms=on "${{ github.workspace }}\build\bin\yuzu-build"
+        shell: pwsh
+
+      #Upload Artifacts
+      - name: Making artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: yuzu-ea-${{ steps.vars.outputs.sha_short }}-mingw
+          path: yuzu-ea-${{ github.ref_name }}-${{ steps.vars.outputs.sha_short }}-mingw.7z
+          retention-days: 7
+
+#     #Publishing to Release
+#     - name: Release to GitHub Releases
+#       uses: softprops/action-gh-release@v1
+#       with:
+#         name: EA${{ github.event.head_commit.message }}
+#         tag_name: EA${{ github.event.head_commit.message }}
+#         body: "Yuzu Early Access CI Builds with Github Actions [Current Build: yuzu Early Access ${{ github.event.head_commit.message }}]"
+#         files: ${{ github.workspace }}\yuzu-early-access-EA${{ github.event.head_commit.message }}.zip
