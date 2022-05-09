@@ -12,7 +12,7 @@ jobs:
     env:
       CONAN_USER_HOME: "${{ github.workspace }}/conan/"
       CONAN_USER_HOME_SHORT: "${{ github.workspace }}/conan/short"
-      MSYS2: ${{ github.workspace }}\msys2
+      MSYS2: ${{ github.workspace }}\msys2\msys64
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - name: actions/checkout
@@ -54,7 +54,7 @@ jobs:
       - name: Setup MSYS2
         uses: msys2/setup-msys2@v2
         with:
-          location: ${{ env.MSYS2 }}
+          location: ${{ github.workspace }}\msys2
           msystem: MINGW64
           update: true
           install: >-
@@ -79,22 +79,22 @@ jobs:
       - name: Configurate MSYS2 envirionment
         run: |
           python -m pip install conan
-          echo 'PATH=/mingw64/bin:$PATH' >> ~/.bashrc
-          echo 'PATH=$(readlink -e /VulkanSDK/bin/):$PATH' >> ~/.bashrc
         shell: msys2 {0}
 
-      #Show the list of PATH
-      - name: List of PATH
-        run: |
-          echo $PATH
-        shell: msys2 {0}
+#     #Show the list of PATH
+#     - name: List of PATH
+#       run: |
+#         PATH=/VulkanSDK/bin:$PATH
+#         PATH=/VULKAN_SDK/bin:$PATH
+#         echo $PATH
+#       shell: msys2 {0}
 
       #Preparing Build
       #Note: qtwebengine does not support with this toolchain
       - name: Before Build
         run: |
+          PATH=/VULKAN_SDK/bin:$PATH && PATH=/VulkanSDK/bin:$PATH
           cd build && echo Build
-          echo Build
           cmake --version
           cmake .. -G "MSYS Makefiles" -DYUZU_USE_BUNDLED_QT=0 -DYUZU_USE_BUNDLED_SDL2=0 -DYUZU_USE_QT_WEB_ENGINE=OFF -DYUZU_TESTS=OFF -DUSE_DISCORD_PRESENCE=ON -DTITLE_BAR_FORMAT_IDLE="yuzu Early Access ${{ github.ref_name }}-${{ steps.vars.outputs.sha_short }}" -DTITLE_BAR_FORMAT_RUNNING="yuzu Early Access ${{ github.ref_name }}-${{ steps.vars.outputs.sha_short }} | {3}" -DENABLE_COMPATIBILITY_LIST_DOWNLOAD=ON -DENABLE_QT_TRANSLATION=ON -DCMAKE_BUILD_TYPE=Release
         shell: msys2 {0}
@@ -108,29 +108,56 @@ jobs:
       #Build with MinGW
       - name: Build app for release
         run: |
+          PATH=/VULKAN_SDK/bin:$PATH && PATH=/VulkanSDK/bin:$PATH
           cd build
           make -j$(nproc)
         shell: msys2 {0}
 
       - name: After Build
         run: |
-          mkdir ${{ github.workspace }}\build\bin\yuzu-build\yuzu-${{ steps.vars.outputs.sha_short }}-mingw
-          mv ${{ github.workspace }}\build\bin ${{ github.workspace }}\build\bin\yuzu-build\yuzu-${{ steps.vars.outputs.sha_short }}-mingw
+          mkdir ${{ github.workspace }}\build\yuzu-build\yuzu-${{ steps.vars.outputs.sha_short }}-mingw
+          mv ${{ github.workspace }}\build\bin\* ${{ github.workspace }}\build\yuzu-build\yuzu-${{ steps.vars.outputs.sha_short }}-mingw
         shell: pwsh
 
       #Post copy dlls
       - name: Post copy files
         env:
           MINGW64: ${{ env.MSYS2 }}\mingw64\bin
-          FFMPEG: .\build\externals\ffmpeg-4.4\bin
+          FFMPEG: ${{ github.workspace }}\build\externals\ffmpeg-4.4\bin
           QTP: ${{ env.MSYS2 }}\mingw64\share\qt5\plugins
         run: |
-          cd ${{ github.workspace }}\build\bin\yuzu-build\yuzu-${{ steps.vars.outputs.sha_short }}-mingw
+          cd ${{ github.workspace }}\build\yuzu-build\yuzu-${{ steps.vars.outputs.sha_short }}-mingw
           set mingw64path=${{ env.MINGW64 }}
           set ffmpegpath=${{ env.FFMPEG }}
           set qtpluginpath=${{ env.QTP }}
           echo. 2>> qt.conf
-          copy %mingw64path%\lib*.dll
+          echo Copying MinGW libs
+          copy %mingw64path%\libbrotlicommon.dll
+          copy %mingw64path%\libbrotlidec.dll
+          copy %mingw64path%\libbz2*.dll
+          copy %mingw64path%\libcrypto*.dll
+          copy %mingw64path%\libdouble-conversion.dll
+          copy %mingw64path%\libfreetype*.dll
+          copy %mingw64path%\libgcc_s_seh*.dll
+          copy %mingw64path%\libglib*.dll
+          copy %mingw64path%\libgraphite2.dll
+          copy %mingw64path%\libharfbuzz-0.dll
+          copy %mingw64path%\libiconv*.dll
+          copy %mingw64path%\libicudt*.dll
+          copy %mingw64path%\libicuin*.dll
+          copy %mingw64path%\libicuuc*.dll
+          copy %mingw64path%\libintl*.dll
+          copy %mingw64path%\libjpeg*.dll
+          copy %mingw64path%\liblz4.dll
+          copy %mingw64path%\libmd4c.dll
+          copy %mingw64path%\libpcre-*.dll
+          copy %mingw64path%\libpcre2-16*.dll
+          copy %mingw64path%\libpng*.dll
+          copy %mingw64path%\libssl*.dll
+          copy "%mingw64path%\libstdc++*.dll"
+          copy %mingw64path%\libwinpthread*.dll
+          copy %mingw64path%\libzstd.dll
+          echo Copying Qt libs
           copy %mingw64path%\Qt5Core.dll
           copy %mingw64path%\Qt5Gui.dll
           copy %mingw64path%\Qt5Network.dll
@@ -144,7 +171,9 @@ jobs:
           copy %mingw64path%\Qt5Widgets.dll
           copy %mingw64path%\SDL2.dll
           copy %mingw64path%\zlib1.dll
+          echo Copying ffmpeg libs
           copy %ffmpegpath%\*.dll
+          echo Copying Qt plugins
           mkdir plugins\imageformats
           mkdir plugins\platforms
           mkdir plugins\styles
@@ -157,7 +186,7 @@ jobs:
 
       - name: Compress the Build Folder
         run: |
-          7z a -t7z "yuzu-ea-${{ github.ref_name }}-${{ steps.vars.outputs.sha_short }}-mingw.7z" -m0=lzma2:d=64m -mx=9 -aoa -mfb=64 -md=32m -ms=on "${{ github.workspace }}\build\bin\yuzu-build"
+          7z a -t7z "yuzu-ea-${{ github.ref_name }}-${{ steps.vars.outputs.sha_short }}-mingw.7z" -m0=lzma2:d=64m -mx=9 -aoa -mfb=64 -md=32m -ms=on "${{ github.workspace }}\build\yuzu-build"
         shell: pwsh
 
       #Upload Artifacts
