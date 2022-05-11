@@ -82,9 +82,9 @@ jobs:
 
       #Set extansion compiler arguments
       - name: Set extansion compiler arguments
-        if: ${{ inputs.simd != '' }}
+        if: ${{ (inputs || github.event.inputs).simd != '' }}
         run: |
-          simd=${{ inputs.simd }}
+          simd=${{ (inputs || github.event.inputs).simd }}
           if [ "$simd" = "AVX" ] || [ "$simd" = "avx" ]
           then
               echo 'build-arg-ext=-DCMAKE_CXX_FLAGS="/DWIN32 /D_WINDOWS /GR /EHsc /arch:AVX" -DCMAKE_C_FLAGS="/DWIN32 /D_WINDOWS /arch:AVX"' >> $GITHUB_ENV
