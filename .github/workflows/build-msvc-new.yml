@@ -2,8 +2,18 @@ name: yuzu Build MSVC
 
 on:
   workflow_call:
+    inputs:
+      simd:
+        description: 'Compiler instruction set. Can be avx, avx2.'
+        required: false
+        default: ''
 
   workflow_dispatch:
+    inputs:
+      simd:
+        description: 'Compiler instruction set. Can be avx, avx2.'
+        required: false
+        default: ''
 
 jobs:
   build:
@@ -70,14 +80,37 @@ jobs:
       - name: Generating Project using CMake and Ninja
         uses: seanmiddleditch/gha-setup-ninja@master
 
+      #Set extansion compiler arguments
+      - name: Set extansion compiler arguments
+        if: ${{ inputs.simd != '' }}
+        run: |
+          simd=${{ inputs.simd }}
+          if [ "$simd" = "AVX" ] || [ "$simd" = "avx" ]
+          then
+              echo 'build-arg-ext=-DCMAKE_CXX_FLAGS="/DWIN32 /D_WINDOWS /GR /EHsc /arch:AVX" -DCMAKE_C_FLAGS="/DWIN32 /D_WINDOWS /arch:AVX"' >> $GITHUB_ENV
+              echo 'simd-suffix=-avx' >> $GITHUB_ENV
+          elif [ "$simd" = "AVX2" ] || [ "$simd" = "avx2" ]
+          then
+              echo 'build-arg-ext=-DCMAKE_CXX_FLAGS="/DWIN32 /D_WINDOWS /GR /EHsc /arch:AVX2" -DCMAKE_C_FLAGS="/DWIN32 /D_WINDOWS /arch:AVX2"' >> $GITHUB_ENV
+              echo 'simd-suffix=-avx2' >> $GITHUB_ENV
+          elif [ "$simd" = "" ]
+          then
+              echo ''
+          else
+              echo 'Unknown instruction set' $simd
+          fi
+        shell: bash
+
       #Preparing Build
       - name: Before Build
+        env:
+          build-arg: -DYUZU_USE_BUNDLED_QT=1 -DYUZU_USE_BUNDLED_SDL2=1 -DYUZU_USE_QT_WEB_ENGINE=ON -DYUZU_TESTS=OFF -DUSE_DISCORD_PRESENCE=ON -DTITLE_BAR_FORMAT_IDLE="yuzu Early Access ${{ github.ref_name }}-${{ steps.vars.outputs.sha_short }}" -DTITLE_BAR_FORMAT_RUNNING="yuzu Early Access ${{ github.ref_name }}-${{ steps.vars.outputs.sha_short }} | {3}" -DENABLE_COMPATIBILITY_LIST_DOWNLOAD=ON -DENABLE_QT_TRANSLATION=ON -DCMAKE_BUILD_TYPE=Release
         run: |
           cd build && echo Build
           echo Build
           pip install conan --upgrade
           cmake --version
-          cmake .. -G "Visual Studio 17 2022" -A x64 -DYUZU_USE_BUNDLED_QT=1 -DYUZU_USE_BUNDLED_SDL2=1 -DYUZU_USE_QT_WEB_ENGINE=ON -DYUZU_TESTS=OFF -DUSE_DISCORD_PRESENCE=ON -DTITLE_BAR_FORMAT_IDLE="yuzu Early Access ${{ github.ref_name }}-${{ steps.vars.outputs.sha_short }}" -DTITLE_BAR_FORMAT_RUNNING="yuzu Early Access ${{ github.ref_name }}-${{ steps.vars.outputs.sha_short }} | {3}" -DENABLE_COMPATIBILITY_LIST_DOWNLOAD=ON -DENABLE_QT_TRANSLATION=ON -DCMAKE_BUILD_TYPE=Release
+          cmake .. -G "Visual Studio 17 2022" ${{ env.build-arg }} ${{ env.build-arg-ext }}
         shell: pwsh
 
 #     #Cache files
@@ -91,8 +124,8 @@ jobs:
       - name: After Build
         run: |
           mkdir ${{ github.workspace }}\build\bin\yuzu-build\yuzu-${{ steps.vars.outputs.sha_short }}-msvc
-          mv ${{ github.workspace }}\build\bin\Release ${{ github.workspace }}\build\bin\yuzu-build\yuzu-${{ steps.vars.outputs.sha_short }}-msvc
-          del ${{ github.workspace }}\build\bin\yuzu-build\yuzu-${{ steps.vars.outputs.sha_short }}-msvc\Release\*.pdb
+          mv ${{ github.workspace }}\build\bin\Release\* ${{ github.workspace }}\build\bin\yuzu-build\yuzu-${{ steps.vars.outputs.sha_short }}-msvc
+          del ${{ github.workspace }}\build\bin\yuzu-build\yuzu-${{ steps.vars.outputs.sha_short }}-msvc\*.pdb
         shell: pwsh
 
       - name: Compress the Build Folder
@@ -104,7 +137,7 @@ jobs:
       - name: Making artifact
         uses: actions/upload-artifact@v2
         with:
-          name: yuzu-ea-${{ steps.vars.outputs.sha_short }}-msvc
+          name: yuzu-ea-${{ steps.vars.outputs.sha_short }}-msvc${{ env.simd-suffix }}
           path: yuzu-ea-${{ github.ref_name }}-${{ steps.vars.outputs.sha_short }}-msvc.7z
           retention-days: 7
 
