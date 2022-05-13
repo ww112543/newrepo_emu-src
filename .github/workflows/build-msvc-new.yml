@@ -8,6 +8,21 @@ on:
         type: string
         required: false
         default: ''
+      GL:
+        description: 'Enables whole program optimization.This will enable LTCG.'
+        type: boolean
+        required: false
+        default: 'false'
+      contract-fp:
+        description: 'Allows the compiler to generate floating-point contractions.'
+        type: boolean
+        required: false
+        default: 'false'
+      type-fp:
+        description: 'Type of floating-point behavior.Can be default, fast(unsafe), precise, strict'
+        type: string
+        required: false
+        default: 'default'
 
   workflow_dispatch:
     inputs:
@@ -16,6 +31,21 @@ on:
         type: string
         required: false
         default: ''
+      GL:
+        description: 'Enables whole program optimization.This will enable LTCG.'
+        type: boolean
+        required: false
+        default: 'false'
+      contract-fp:
+        description: 'Allows the compiler to generate floating-point contractions.'
+        type: boolean
+        required: false
+        default: 'false'
+      type-fp:
+        description: 'Type of floating-point behavior.Can be default, fast(unsafe), precise, strict'
+        type: string
+        required: false
+        default: 'default'
 
 jobs:
   build:
@@ -87,13 +117,45 @@ jobs:
         if: ${{ (inputs || github.event.inputs).simd != '' }}
         run: |
           simd=${{ (inputs || github.event.inputs).simd }}
+          gl=${{ (inputs || github.event.inputs).GL }}
+          fpc=${{ (inputs || github.event.inputs).contract-fp }}
+          fpt=${{ (inputs || github.event.inputs).type-fp }}
+          comp_args_cxx="/DWIN32 /D_WINDOWS /GR /EHsc "
+          comp_args_c="/DWIN32 /D_WINDOWS "
+          link_args="/machine:x64 "
+          if [ "$gl" == "True" ] || [ "$gl" == "true" ]
+          then
+              comp_args_cxx=$comp_args_cxx"/GL "
+              comp_args_c=$comp_args_c"/GL "
+              link_args=$link_args"/LTCG "
+          fi
+          if [ "$fpc" == "True" ] || [ "$fpc" == "true" ]
+          then
+              comp_args_cxx=$comp_args_cxx"/fp:contract "
+              comp_args_c=$comp_args_c"/fp:contract "
+          fi
+          if [ "$fpt" == "fast" ]
+          then
+              comp_args_cxx=$comp_args_cxx"/fp:fast "
+              comp_args_c=$comp_args_c"/fp:fast "
+          elif [ "$fpt" == "precise" ]
+          then
+              comp_args_cxx=$comp_args_cxx"/fp:precise "
+              comp_args_c=$comp_args_c"/fp:precise "
+          elif [ "$fpt" == "strict" ]
+          then
+              comp_args_cxx=$comp_args_cxx"/fp:strict "
+              comp_args_c=$comp_args_c"/fp:strict "
+          fi
           if [ "$simd" = "AVX" ] || [ "$simd" = "avx" ]
           then
-              echo 'build-arg-ext=-DCMAKE_CXX_FLAGS="/DWIN32 /D_WINDOWS /GR /EHsc /arch:AVX" -DCMAKE_C_FLAGS="/DWIN32 /D_WINDOWS /arch:AVX"' >> $GITHUB_ENV
+              comp_args_cxx=$comp_args_cxx"/arch:AVX "
+              comp_args_c=$comp_args_c"/arch:AVX "
               echo 'simd-suffix=-avx' >> $GITHUB_ENV
           elif [ "$simd" = "AVX2" ] || [ "$simd" = "avx2" ]
           then
-              echo 'build-arg-ext=-DCMAKE_CXX_FLAGS="/DWIN32 /D_WINDOWS /GR /EHsc /arch:AVX2" -DCMAKE_C_FLAGS="/DWIN32 /D_WINDOWS /arch:AVX2"' >> $GITHUB_ENV
+              comp_args_cxx=$comp_args_cxx"/arch:AVX2 "
+              comp_args_c=$comp_args_c"/arch:AVX2 "
               echo 'simd-suffix=-avx2' >> $GITHUB_ENV
           elif [ "$simd" = "" ]
           then
@@ -101,6 +163,7 @@ jobs:
           else
               echo 'Unknown instruction set' $simd
           fi
+          echo 'build-arg-ext=-DCMAKE_CXX_FLAGS="'$comp_args_cxx'"' '-DCMAKE_C_FLAGS="'$comp_args_c'"' '-CMAKE_EXE_LINKER_FLAGS="'$link_args'"' >> $GITHUB_ENV
         shell: bash
 
       #Preparing Build

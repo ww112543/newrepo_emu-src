@@ -21,6 +21,8 @@ jobs:
     uses: ./.github/workflows/build-msvc-new.yml
     with:
       simd: avx2
+      GL: true
+      contract-fp: true
 
   build-mingw:
     uses: ./.github/workflows/build-mingw-new.yml
