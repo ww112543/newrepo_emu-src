@@ -12,12 +12,12 @@ on:
         description: 'Enables whole program optimization.This will enable LTCG.'
         type: boolean
         required: false
-        default: 'false'
+        default: false
       contract-fp:
         description: 'Allows the compiler to generate floating-point contractions.'
         type: boolean
         required: false
-        default: 'false'
+        default: false
       type-fp:
         description: 'Type of floating-point behavior.Can be default, fast(unsafe), precise, strict'
         type: string
@@ -35,12 +35,12 @@ on:
         description: 'Enables whole program optimization.This will enable LTCG.'
         type: boolean
         required: false
-        default: 'false'
+        default: false
       contract-fp:
         description: 'Allows the compiler to generate floating-point contractions.'
         type: boolean
         required: false
-        default: 'false'
+        default: false
       type-fp:
         description: 'Type of floating-point behavior.Can be default, fast(unsafe), precise, strict'
         type: string
