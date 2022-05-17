@@ -163,7 +163,7 @@ jobs:
           else
               echo 'Unknown instruction set' $simd
           fi
-          echo 'build-arg-ext=-DCMAKE_CXX_FLAGS="'$comp_args_cxx'"' '-DCMAKE_C_FLAGS="'$comp_args_c'"' '-CMAKE_EXE_LINKER_FLAGS="'$link_args'"' >> $GITHUB_ENV
+          echo 'build-arg-ext=-DCMAKE_CXX_FLAGS="'$comp_args_cxx'"' '-DCMAKE_C_FLAGS="'$comp_args_c'"' '-DCMAKE_EXE_LINKER_FLAGS="'$link_args'"' >> $GITHUB_ENV
         shell: bash
 
       #Preparing Build
