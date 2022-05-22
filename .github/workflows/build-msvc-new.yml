@@ -3,6 +3,11 @@ name: yuzu Build MSVC
 on:
   workflow_call:
     inputs:
+      runos:
+        description: 'Running operating system. Which will change VS version.'
+        type: string
+        required: false
+        default: 'windows-latest'
       simd:
         description: 'Compiler instruction set. Can be avx, avx2.'
         type: string
@@ -26,6 +31,13 @@ on:
 
   workflow_dispatch:
     inputs:
+      runos:
+        description: 'Running operating system. Which will change VS version.'
+        type: choice
+        required: false
+        options:
+        - windows-latest
+        - windows-2019
       simd:
         description: 'Compiler instruction set. Can be avx, avx2.'
         type: string
@@ -50,7 +62,7 @@ on:
 jobs:
   build:
     name: Building yuzu Binaries with MSVC
-    runs-on: windows-latest
+    runs-on: ${{ (inputs || github.event.inputs).runos }}
     env:
       CONAN_USER_HOME: "${{ github.workspace }}/conan/"
       CONAN_USER_HOME_SHORT: "${{ github.workspace }}/conan/short"
@@ -87,8 +99,8 @@ jobs:
           cache-name: cache-conan-modules
         with:
           path: ${{ env.CONAN_USER_HOME }}
-          key: host-${{ runner.os }}-target-${{ env.cache-name }}-${{ hashFiles('CMakeLists.txt') }}
-          restore-keys: host-${{ runner.os }}-target-${{ env.cache-name }}-
+          key: host-${{ (inputs || github.event.inputs).runos }}-target-${{ env.cache-name }}-${{ hashFiles('CMakeLists.txt') }}
+          restore-keys: host-${{ (inputs || github.event.inputs).runos }}-target-${{ env.cache-name }}-
 
       #Install Vulkan SDK
       - name: Prepare Vulkan SDK
@@ -114,8 +126,9 @@ jobs:
 
       #Set extansion compiler arguments
       - name: Set extansion compiler arguments
-        if: ${{ (inputs || github.event.inputs).simd != '' }}
+#       if: ${{ (inputs || github.event.inputs).simd != '' }}
         run: |
+          os=${{ (inputs || github.event.inputs).runos }}
           simd=${{ (inputs || github.event.inputs).simd }}
           gl=${{ (inputs || github.event.inputs).GL }}
           fpc=${{ (inputs || github.event.inputs).contract-fp }}
@@ -123,13 +136,24 @@ jobs:
           comp_args_cxx="/DWIN32 /D_WINDOWS /GR /EHsc "
           comp_args_c="/DWIN32 /D_WINDOWS "
           link_args="/machine:x64 "
+          cmake_args="-G "
+          bsuffix=""
+          if [ "$os" == "windows-latest" ]
+          then
+              cmake_args=$cmake_args'"Visual Studio 17 2022"'
+              bsuffix=$bsuffix"-vs2022"
+          elif [ "$os" == "windows-2019" ]
+          then
+              cmake_args=$cmake_args'"Visual Studio 16 2019"'
+              bsuffix=$bsuffix"-vs2019"
+          fi
           if [ "$gl" == "True" ] || [ "$gl" == "true" ]
           then
               comp_args_cxx=$comp_args_cxx"/GL "
               comp_args_c=$comp_args_c"/GL "
               link_args=$link_args"/LTCG "
           fi
-          if [ "$fpc" == "True" ] || [ "$fpc" == "true" ]
+          if [ "$fpc" == "True" ] || [ "$fpc" == "true" ] && [ "$os" == "windows-latest" ]
           then
               comp_args_cxx=$comp_args_cxx"/fp:contract "
               comp_args_c=$comp_args_c"/fp:contract "
@@ -151,19 +175,21 @@ jobs:
           then
               comp_args_cxx=$comp_args_cxx"/arch:AVX "
               comp_args_c=$comp_args_c"/arch:AVX "
-              echo 'simd-suffix=-avx' >> $GITHUB_ENV
+              bsuffix=$bsuffix"-avx"
           elif [ "$simd" = "AVX2" ] || [ "$simd" = "avx2" ]
           then
               comp_args_cxx=$comp_args_cxx"/arch:AVX2 "
               comp_args_c=$comp_args_c"/arch:AVX2 "
-              echo 'simd-suffix=-avx2' >> $GITHUB_ENV
+              bsuffix=$bsuffix"-avx2"
           elif [ "$simd" = "" ]
           then
               echo ''
           else
               echo 'Unknown instruction set' $simd
           fi
+          echo 'build-gen='$cmake_args >> $GITHUB_ENV
           echo 'build-arg-ext=-DCMAKE_CXX_FLAGS="'$comp_args_cxx'"' '-DCMAKE_C_FLAGS="'$comp_args_c'"' '-DCMAKE_EXE_LINKER_FLAGS="'$link_args'"' >> $GITHUB_ENV
+          echo 'simd-suffix='$bsuffix >> $GITHUB_ENV
         shell: bash
 
       #Preparing Build
@@ -175,7 +201,7 @@ jobs:
           echo Build
           pip install conan --upgrade
           cmake --version
-          cmake .. -G "Visual Studio 17 2022" ${{ env.build-arg }} ${{ env.build-arg-ext }}
+          cmake .. ${{ env.build-gen }} ${{ env.build-arg }} ${{ env.build-arg-ext }}
         shell: pwsh
 
 #     #Cache files
@@ -195,7 +221,7 @@ jobs:
 
       - name: Compress the Build Folder
         run: |
-          7z a -t7z "yuzu-ea-${{ github.ref_name }}-${{ steps.vars.outputs.sha_short }}-msvc.7z" -m0=lzma2:d=64m -mx=9 -aoa -mfb=64 -md=32m -ms=on "${{ github.workspace }}\build\bin\yuzu-build"
+          7z a -t7z "yuzu-ea-${{ github.ref_name }}-${{ steps.vars.outputs.sha_short }}-msvc${{ env.simd-suffix }}.7z" -m0=lzma2:d=64m -mx=9 -aoa -mfb=64 -md=32m -ms=on "${{ github.workspace }}\build\bin\yuzu-build"
         shell: pwsh
           
       #Upload Artifacts
@@ -203,7 +229,7 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: yuzu-ea-${{ steps.vars.outputs.sha_short }}-msvc${{ env.simd-suffix }}
-          path: yuzu-ea-${{ github.ref_name }}-${{ steps.vars.outputs.sha_short }}-msvc.7z
+          path: yuzu-ea-${{ github.ref_name }}-${{ steps.vars.outputs.sha_short }}-msvc${{ env.simd-suffix }}.7z
           retention-days: 7
 
 #     #Publishing to Release

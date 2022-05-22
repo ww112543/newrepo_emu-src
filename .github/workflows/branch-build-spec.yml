@@ -26,3 +26,21 @@ jobs:
 
   build-mingw:
     uses: ./.github/workflows/build-mingw-new.yml
+
+  #Fallback if compile failed
+  fail-msvc:
+     needs: [build-msvc]
+     if: failure()
+     uses: ./.github/workflows/build-msvc-new.yml
+     with:
+       runos: windows-2019
+
+  fail-msvc-avx2:
+     needs: [build-msvc-avx2]
+     if: failure()
+     uses: ./.github/workflows/build-msvc-new.yml
+     with:
+       runos: windows-2019
+       simd: avx2
+       GL: true
+       contract-fp: true
