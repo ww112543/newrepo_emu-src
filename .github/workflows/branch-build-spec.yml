@@ -3,7 +3,7 @@ name: Branch build
 on:
   push:
     branches:
-      - revent-gc-shader-ci
+      - fix-audio-clicking
     paths-ignore:
       - '.github/**'
 

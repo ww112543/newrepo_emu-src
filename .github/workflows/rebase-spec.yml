@@ -25,9 +25,9 @@ jobs:
           git config --local user.name "github-actions[bot]"
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git branch
-          git checkout revent-gc-shader-ci
+          git checkout fix-audio-clicking
           git rebase ${{github.event.repository.default_branch}}
-          git push origin revent-gc-shader-ci --force
+          git push origin fix-audio-clicking --force
 
       - name: ReSync Branch (tag)
         if: ${{ github.ref_type == 'tag' }}
@@ -37,9 +37,9 @@ jobs:
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git checkout ${{github.event.repository.default_branch}}
           git branch
-          git checkout revent-gc-shader-ci
+          git checkout fix-audio-clicking
           git rebase ${{github.event.repository.default_branch}}
-          git push origin revent-gc-shader-ci --force
+          git push origin fix-audio-clicking --force
 
 #     - name: ReSync Branch
 #       uses: Joao208/resync-branch@1.5.0
