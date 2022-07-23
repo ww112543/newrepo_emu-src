@@ -194,7 +194,7 @@ jobs:
       #Preparing Build
       - name: Before Build
         env:
-          build-arg: -DVCPKG_TOOLCHAIN_FILE=${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake -DYUZU_USE_BUNDLED_QT=1 -DYUZU_USE_BUNDLED_SDL2=1 -DYUZU_USE_QT_WEB_ENGINE=ON -DYUZU_TESTS=OFF -DUSE_DISCORD_PRESENCE=ON -DTITLE_BAR_FORMAT_IDLE="yuzu Early Access ${{ github.ref_name }}-${{ steps.vars.outputs.sha_short }}" -DTITLE_BAR_FORMAT_RUNNING="yuzu Early Access ${{ github.ref_name }}-${{ steps.vars.outputs.sha_short }} | {3}" -DENABLE_COMPATIBILITY_LIST_DOWNLOAD=ON -DENABLE_QT_TRANSLATION=ON -DCMAKE_BUILD_TYPE=Release
+          build-arg: -DCMAKE_FIND_DEBUG_MODE=1 -DVCPKG_TOOLCHAIN_FILE=${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake -DYUZU_USE_BUNDLED_QT=1 -DYUZU_USE_BUNDLED_SDL2=1 -DYUZU_USE_QT_WEB_ENGINE=ON -DYUZU_TESTS=OFF -DUSE_DISCORD_PRESENCE=ON -DTITLE_BAR_FORMAT_IDLE="yuzu Early Access ${{ github.ref_name }}-${{ steps.vars.outputs.sha_short }}" -DTITLE_BAR_FORMAT_RUNNING="yuzu Early Access ${{ github.ref_name }}-${{ steps.vars.outputs.sha_short }} | {3}" -DENABLE_COMPATIBILITY_LIST_DOWNLOAD=ON -DENABLE_QT_TRANSLATION=ON -DCMAKE_BUILD_TYPE=Release
         run: |
           cd build && echo Build
           echo Build
