@@ -39,16 +39,14 @@ jobs:
           vulkan-components: Vulkan-Headers, Glslang
           vulkan-use-cache: true
 
-      #Cache Conan modules
-      - name: Cache Conan modules
-        id: github-cache-conan
-        uses: actions/cache@v3
-        env:
-          cache-name: cache-conan-modules
+      #Setup vcpkg
+      - name: Setup vcpkg
+        uses: lukka/run-vcpkg@v10
         with:
-          path: ${{ env.CONAN_USER_HOME }}
-          key: host-${{ runner.os }}-target-${{ env.cache-name }}-mingw-${{ hashFiles('CMakeLists.txt') }}
-          restore-keys: host-${{ runner.os }}-target-${{ env.cache-name }}-mingw-
+          vcpkgDirectory: '${{ github.workspace }}/vcpkg'
+          vcpkgGitCommitId: 'cef0b3ec767df6e83806899fe9525f6cf8d7bc91'
+          runVcpkgInstall: true
+          appendedCacheKey: ${{ (inputs || github.event.inputs).runos }}-vcpkg-mingw
 
       #Setup MSYS2
       - name: Setup MSYS2
@@ -75,11 +73,11 @@ jobs:
           mklink /J "${{ env.MSYS2 }}\VulkanSDK" "${{ env.VULKAN_SDK }}"
         shell: cmd
 
-      #Configurate MSYS2 envirionment
-      - name: Configurate MSYS2 envirionment
-        run: |
-          python -m pip install conan
-        shell: msys2 {0}
+#     #Configurate MSYS2 envirionment
+#     - name: Configurate MSYS2 envirionment
+#       run: |
+#         python -m pip install conan
+#       shell: msys2 {0}
 
 #     #Show the list of PATH
 #     - name: List of PATH

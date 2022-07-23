@@ -91,16 +91,14 @@ jobs:
         run: echo "::set-output name=sha_short::$(git rev-parse --short HEAD)" && echo Completed
         shell: pwsh
 
-      #Cache Conan modules
-      - name: Cache Conan modules
-        id: github-cache-conan
-        uses: actions/cache@v3
-        env:
-          cache-name: cache-conan-modules
+      #Setup vcpkg
+      - name: Setup vcpkg
+        uses: lukka/run-vcpkg@v10
         with:
-          path: ${{ env.CONAN_USER_HOME }}
-          key: host-${{ (inputs || github.event.inputs).runos }}-target-${{ env.cache-name }}-${{ hashFiles('CMakeLists.txt') }}
-          restore-keys: host-${{ (inputs || github.event.inputs).runos }}-target-${{ env.cache-name }}-
+          vcpkgDirectory: '${{ github.workspace }}/vcpkg'
+          vcpkgGitCommitId: 'cef0b3ec767df6e83806899fe9525f6cf8d7bc91'
+          runVcpkgInstall: true
+          appendedCacheKey: ${{ (inputs || github.event.inputs).runos }}-vcpkg-msvc
 
       #Install Vulkan SDK
       - name: Prepare Vulkan SDK
@@ -199,7 +197,6 @@ jobs:
         run: |
           cd build && echo Build
           echo Build
-          pip install conan --upgrade
           cmake --version
           cmake .. ${{ env.build-gen }} ${{ env.build-arg }} ${{ env.build-arg-ext }}
         shell: pwsh
