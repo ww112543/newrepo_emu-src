@@ -7,4 +7,4 @@ This repository was forked from [pineappleEA/pineapple-src](https://github.com/p
 
 ## Legal Notice
 
-yuzu is a GPLv2 program, which allows fully free redistribution of its source code.
+yuzu is a GPLv3 program, which allows fully free redistribution of its source code.
