@@ -24,8 +24,8 @@ jobs:
       GL: true
       contract-fp: true
 
-  build-mingw:
-    uses: ./.github/workflows/build-mingw-new.yml
+# build-mingw:
+#   uses: ./.github/workflows/build-mingw-new.yml
 
   #Fallback if compile failed
   fail-msvc:
