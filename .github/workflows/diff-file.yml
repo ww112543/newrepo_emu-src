@@ -34,7 +34,7 @@ jobs:
 
       - name: Copy to current repository
         run: |
-          rsync -rlcih --size-only --progress --stats --exclude='README.md' --exclude='.gitattributes' --exclude='.gitignore' --exclude='.git/' --exclude='.github/' --delete ./upstream-pinapple/ ./current
+          rsync -rlcih --size-only --progress --stats --exclude='README.md' --exclude='.gitattributes' --exclude='.gitignore' --exclude='.git/' --exclude='.github/' --exclude='vcpkg.json' --delete ./upstream-pinapple/ ./current
 
       - name: Get current day
         id: date
