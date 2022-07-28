@@ -46,7 +46,7 @@ jobs:
           vcpkgDirectory: '${{ github.workspace }}/vcpkg'
           vcpkgGitCommitId: 'cef0b3ec767df6e83806899fe9525f6cf8d7bc91'
           runVcpkgInstall: true
-          vcpkgJsonGlob: '${{ github.workspace }}\vcpkg.json'
+          vcpkgJsonGlob: './vcpkg.json'
           appendedCacheKey: ${{ (inputs || github.event.inputs).runos }}-vcpkg-mingw
 
       #Setup MSYS2
