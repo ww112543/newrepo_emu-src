@@ -39,15 +39,15 @@ jobs:
           vulkan-components: Vulkan-Headers, Glslang
           vulkan-use-cache: true
 
-      #Setup vcpkg
-      - name: Setup vcpkg
-        uses: lukka/run-vcpkg@v10
-        with:
-          vcpkgDirectory: '${{ github.workspace }}/vcpkg'
-          vcpkgGitCommitId: 'cef0b3ec767df6e83806899fe9525f6cf8d7bc91'
-          runVcpkgInstall: true
-          vcpkgJsonGlob: '**/vcpkg.json'
-          appendedCacheKey: ${{ (inputs || github.event.inputs).runos }}-vcpkg-mingw
+#     #Setup vcpkg
+#     - name: Setup vcpkg
+#       uses: lukka/run-vcpkg@v10
+#       with:
+#         vcpkgDirectory: '${{ github.workspace }}/vcpkg'
+#         vcpkgGitCommitId: 'cef0b3ec767df6e83806899fe9525f6cf8d7bc91'
+#         runVcpkgInstall: true
+#         vcpkgJsonGlob: '**/vcpkg.json'
+#         appendedCacheKey: ${{ (inputs || github.event.inputs).runos }}-vcpkg-mingw
 
       #Setup MSYS2
       - name: Setup MSYS2
@@ -95,7 +95,7 @@ jobs:
           PATH=/VULKAN_SDK/bin:$PATH && PATH=/VulkanSDK/bin:$PATH
           cd build && echo Build
           cmake --version
-          cmake .. -G "MSYS Makefiles" -DCMAKE_TOOLCHAIN_FILE=${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake -DYUZU_USE_BUNDLED_QT=0 -DYUZU_USE_BUNDLED_SDL2=0 -DYUZU_USE_QT_WEB_ENGINE=OFF -DYUZU_TESTS=OFF -DUSE_DISCORD_PRESENCE=ON -DTITLE_BAR_FORMAT_IDLE="yuzu Early Access ${{ github.ref_name }}-${{ steps.vars.outputs.sha_short }}" -DTITLE_BAR_FORMAT_RUNNING="yuzu Early Access ${{ github.ref_name }}-${{ steps.vars.outputs.sha_short }} | {3}" -DENABLE_COMPATIBILITY_LIST_DOWNLOAD=ON -DENABLE_QT_TRANSLATION=ON -DCMAKE_BUILD_TYPE=Release
+          cmake .. -G "MSYS Makefiles" -DYUZU_USE_BUNDLED_VCPKG=ON -DYUZU_USE_BUNDLED_QT=0 -DYUZU_USE_BUNDLED_SDL2=0 -DYUZU_USE_QT_WEB_ENGINE=OFF -DYUZU_TESTS=OFF -DUSE_DISCORD_PRESENCE=ON -DTITLE_BAR_FORMAT_IDLE="yuzu Early Access ${{ github.ref_name }}-${{ steps.vars.outputs.sha_short }}" -DTITLE_BAR_FORMAT_RUNNING="yuzu Early Access ${{ github.ref_name }}-${{ steps.vars.outputs.sha_short }} | {3}" -DENABLE_COMPATIBILITY_LIST_DOWNLOAD=ON -DENABLE_QT_TRANSLATION=ON -DCMAKE_BUILD_TYPE=Release
         shell: msys2 {0}
 
       #-DCMAKE_EXE_LINKER_FLAGS="--enable-static -static-libgcc -static-libstdc++ -static"
