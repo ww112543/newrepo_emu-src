@@ -1,0 +1,49 @@
+name: yuzu Build MinGW (linux)
+
+on:
+  workflow_call:
+
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Building yuzu Binaries with MinGW (linux)
+    runs-on: ubuntu-latest
+    env:
+      CONAN_USER_HOME: "${{ github.workspace }}/conan/"
+      CONAN_USER_HOME_SHORT: "${{ github.workspace }}/conan/short"
+    container:
+      image: ".github/docker/build-env/linux-mingw"
+      options: -u 1001
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: recursive
+          fetch-depth: 0
+
+#     - name: Set up cache
+#       uses: actions/cache@v3
+#       id: ccache-restore
+#       with:
+#         path: ~/.ccache
+#         key: ${{ runner.os }}-${{ matrix.type }}-${{ github.sha }}
+#         restore-keys: |
+#           ${{ runner.os }}-${{ matrix.type }}-
+
+#     - name: Create ccache directory
+#       if: steps.ccache-restore.outputs.cache-hit != 'true'
+#       run: mkdir -p ~/.ccache
+
+      - name: Build
+        run: ./.github/docker/scripts/linux-mingw/docker.sh
+
+      - name: Pack
+        run: ./.github/docker/scripts/linux-mingw/upload.sh
+        env:
+          NO_SOURCE_PACK: "YES"
+
+      - name: Upload
+        uses: actions/upload-artifact@v3
+        with:
+          name: yuzu-ea-${{ steps.vars.outputs.sha_short }}-mingw
+          path: artifacts/
