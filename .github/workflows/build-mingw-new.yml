@@ -159,6 +159,7 @@ jobs:
           echo Copying Qt libs
           copy %mingw64path%\Qt5Core.dll
           copy %mingw64path%\Qt5Gui.dll
+          copy %mingw64path%\Qt5Multimedia.dll
           copy %mingw64path%\Qt5Network.dll
           copy %mingw64path%\Qt5Positioning.dll
           copy %mingw64path%\Qt5PrintSupport.dll
@@ -176,11 +177,14 @@ jobs:
           mkdir plugins\imageformats
           mkdir plugins\platforms
           mkdir plugins\styles
+          mkdir mediaservice
           copy %qtpluginpath%\imageformats\qgif.dll .\plugins\imageformats\
           copy %qtpluginpath%\imageformats\qjpeg.dll .\plugins\imageformats\
           copy %qtpluginpath%\imageformats\qgif.dll .\plugins\imageformats\
           copy %qtpluginpath%\platforms\qwindows.dll .\plugins\platforms\
           copy %qtpluginpath%\styles\qwindowsvistastyle.dll .\plugins\styles\
+          copy %qtpluginpath%\mediaservice\dsengine.dll .\mediaservice\
+          copy %qtpluginpath%\mediaservice\wmfengine.dll .\mediaservice\
         shell: cmd
 
       - name: Compress the Build Folder
