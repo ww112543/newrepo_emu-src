@@ -124,11 +124,13 @@ jobs:
           MINGW64: ${{ env.MSYS2 }}\mingw64\bin
           FFMPEG: ${{ github.workspace }}\build\externals\ffmpeg-4.4\bin
           QTP: ${{ env.MSYS2 }}\mingw64\share\qt5\plugins
+          VCPKG: ${{ github.workspace }}\build\vcpkg_installed\x64-mingw-dynamic\bin
         run: |
           cd ${{ github.workspace }}\build\yuzu-build\yuzu-${{ steps.vars.outputs.sha_short }}-mingw
           set mingw64path=${{ env.MINGW64 }}
           set ffmpegpath=${{ env.FFMPEG }}
           set qtpluginpath=${{ env.QTP }}
+          set vcpkgpath=${{ env.VCPKG }}
           echo. 2>> qt.conf
           echo Copying MinGW libs
           copy %mingw64path%\libbrotlicommon.dll
@@ -185,6 +187,9 @@ jobs:
           copy %qtpluginpath%\styles\qwindowsvistastyle.dll .\plugins\styles\
           copy %qtpluginpath%\mediaservice\dsengine.dll .\mediaservice\
           copy %qtpluginpath%\mediaservice\wmfengine.dll .\mediaservice\
+          echo Copying vcpkg libs
+          copy %vcpkgpath%\libfmt.dll
+          copy %vcpkgpath%\libboost_context-mgw12-mt-x64-*.dll
         shell: cmd
 
       - name: Compress the Build Folder
