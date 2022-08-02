@@ -103,11 +103,12 @@ jobs:
       #Note: qtwebengine does not support with this toolchain
       - name: Before Build
         run: |
-          flag=${{ (inputs || github.event.inputs).flag }}
+          flag="${{ (inputs || github.event.inputs).flag }}"
+          echo $flag
           if [ "$flag" != "" ]
           then
-          export CFLAGS="$flag"
-          export CXXFLAGS="$flag"
+          export CFLAGS=$flag
+          export CXXFLAGS=$flag
           echo "build-suffix=-avx2" >> $GITHUB_ENV
           fi
           PATH=/VULKAN_SDK/bin:$PATH && PATH=/VulkanSDK/bin:$PATH
