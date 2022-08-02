@@ -61,7 +61,7 @@ for i in package/*.exe; do
 done
 
 pip3 install pefile
-python3 .ci/scripts/windows/scan_dll.py package/*.exe package/imageformats/*.dll "package/"
+python3 .github/docker/scripts/linux-mingw/scan_dll.py package/*.exe package/imageformats/*.dll "package/"
 
 # copy FFmpeg libraries
 EXTERNALS_PATH="$(pwd)/build/externals"
