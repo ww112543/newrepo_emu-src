@@ -30,6 +30,11 @@ jobs:
   build-mingw:
     uses: ./.github/workflows/build-mingw-new.yml
 
+  build-mingw-avx2:
+    uses: ./.github/workflows/build-mingw-new.yml
+    with:
+      flag: '-O3 -march=znver1 -flto'
+
   #Fallback if compile failed
 # fail-msvc:
 #    needs: [build-msvc]
