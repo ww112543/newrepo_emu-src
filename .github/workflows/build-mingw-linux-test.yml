@@ -21,6 +21,11 @@ jobs:
           submodules: recursive
           fetch-depth: 0
 
+      #Set short SHA
+      - name: Set short SHA outputs
+        id: vars
+        run: echo "::set-output name=sha_short::$(git rev-parse --short HEAD)" && echo Completed
+
 #     - name: Set up cache
 #       uses: actions/cache@v3
 #       id: ccache-restore
@@ -38,6 +43,8 @@ jobs:
         run: ./.github/docker/scripts/linux-mingw/docker.sh
         env:
           ENABLE_COMPATIBILITY_REPORTING: "ON"
+          REF_NAME: ${{ github.ref_name }}
+          SHA_SHORT: ${{ steps.vars.outputs.sha_short }}
 
       - name: Pack
         run: ./.github/docker/scripts/linux-mingw/upload.sh

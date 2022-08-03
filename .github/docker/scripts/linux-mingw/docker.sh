@@ -17,8 +17,8 @@ export CXXFLAGS="-femulated-tls"
 cmake .. \
     -DCMAKE_BUILD_TYPE=Release \
     -DCMAKE_TOOLCHAIN_FILE="${PWD}/../CMakeModules/MinGWClangCross.cmake" \
-    -DTITLE_BAR_FORMAT_IDLE="yuzu Early Access ${{ github.ref_name }}-${{ steps.vars.outputs.sha_short }}" \
-	-DTITLE_BAR_FORMAT_RUNNING="yuzu Early Access ${{ github.ref_name }}-${{ steps.vars.outputs.sha_short }} | {3}" \
+    -DTITLE_BAR_FORMAT_IDLE="yuzu Early Access ${REF_NAME}-${SHA_SHORT}" \
+    -DTITLE_BAR_FORMAT_RUNNING="yuzu Early Access ${REF_NAME}-${SHA_SHORT} | {3}" \
     -DENABLE_COMPATIBILITY_LIST_DOWNLOAD=ON \
     -DENABLE_QT_TRANSLATION=ON \
     -DUSE_CCACHE=OFF \
