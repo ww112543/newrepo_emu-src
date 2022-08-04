@@ -82,7 +82,7 @@ def deploy(name, dst, dry_run=False):
     parse_imports_recursive(name, dlls_path)
     for dll_entry in dlls_path:
         if not dry_run:
-            shutil.copy(dll_entry, dst)
+            shutil.copy2(dll_entry, dst)
         else:
             print('[Dry-Run] Copy %s to %s' % (dll_entry, dst))
     print('Deploy completed.')
