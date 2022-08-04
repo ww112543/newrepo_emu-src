@@ -7,19 +7,28 @@ set -e
 ccache -sv
 
 mkdir -p build && cd build
-export LDFLAGS="-fuse-ld=lld"
+if [ "${COMPILER}" == "clang" ]; then
+  toolchainfile="${PWD}/../CMakeModules/MinGWClangCross.cmake"
+  export LDFLAGS="-fuse-ld=lld"
+else
+  toolchainfile="${PWD}/../CMakeModules/MinGWCross.cmake"
+fi
 # -femulated-tls required due to an incompatibility between GCC and Clang
 # TODO(lat9nq): If this is widespread, we probably need to add this to CMakeLists where appropriate
 if [ "${COMP_FLAG}" != "" ]; then
-  export CFLAGS=${COMP_FLAG}
-  export CXXFLAGS="-femulated-tls "${COMP_FLAG}
+  export CFLAGS="${COMP_FLAG}"
+  if [ "${COMPILER}" == "clang" ]; then
+    export CXXFLAGS="-femulated-tls ${COMP_FLAG}"
+  else
+    export CXXFLAGS="${COMP_FLAG}"
+  fi
   echo "build-suffix=-avx2" >> $GITHUB_ENV
-else
+elif [ "${COMPILER}" == "clang" ]; then
   export CXXFLAGS="-femulated-tls"
 fi
 cmake .. \
     -DCMAKE_BUILD_TYPE=Release \
-    -DCMAKE_TOOLCHAIN_FILE="${PWD}/../CMakeModules/MinGWClangCross.cmake" \
+    -DCMAKE_TOOLCHAIN_FILE="${toolchainfile}" \
     -DTITLE_BAR_FORMAT_IDLE="yuzu Early Access ${REF_NAME}-${SHA_SHORT}" \
     -DTITLE_BAR_FORMAT_RUNNING="yuzu Early Access ${REF_NAME}-${SHA_SHORT} | {3}" \
     -DENABLE_COMPATIBILITY_LIST_DOWNLOAD=ON \

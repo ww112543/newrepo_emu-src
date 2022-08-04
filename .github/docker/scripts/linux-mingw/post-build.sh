@@ -2,6 +2,8 @@
 
 set -e
 
+ccache -sv
+
 echo 'Prepare binaries...'
 mkdir package
 

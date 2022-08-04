@@ -3,6 +3,11 @@ name: yuzu Build MinGW (linux) test
 on:
   workflow_call:
     inputs:
+      compiler:
+        description: 'Select compiler.'
+        type: string
+        required: false
+        default: 'clang'
       flag:
         description: 'Compiler flags.'
         type: string
@@ -10,6 +15,12 @@ on:
         default: ''
   workflow_dispatch:
     inputs:
+      compiler:
+        description: 'Select compiler.'
+        type: choice
+        options:
+        - clang
+        - gcc
       flag:
         description: 'Compiler flags.'
         type: string
@@ -21,8 +32,7 @@ jobs:
     name: Building yuzu Binaries with MinGW (linux) test
     runs-on: ubuntu-latest
     env:
-      CONAN_USER_HOME: "${{ github.workspace }}/conan/"
-      CONAN_USER_HOME_SHORT: "${{ github.workspace }}/conan/short"
+      COMPILER: ${{ (inputs || github.event.inputs).compiler }}
     container:
       image: yuzuemu/build-environments:linux-mingw
       options: -u 1001
@@ -48,9 +58,9 @@ jobs:
         id: ccache-restore
         with:
           path: ~/.ccache
-          key: ${{ runner.os }}-mingwcross${{ steps.nospace.outputs.flag }}-${{ github.sha }}
+          key: ${{ runner.os }}-mingwcross${{ steps.nospace.outputs.flag }}-${{ env.COMPILER }}-${{ github.sha }}
           restore-keys: |
-            ${{ runner.os }}-mingwcross${{ steps.nospace.outputs.flag }}-
+            ${{ runner.os }}-mingwcross${{ steps.nospace.outputs.flag }}-${{ env.COMPILER }}-
 
       - name: Create ccache directory
         if: steps.ccache-restore.outputs.cache-hit != 'true'
@@ -71,7 +81,6 @@ jobs:
         run: |
           cd build
           ninja yuzu yuzu-cmd
-          ccache -sv
 
       - name: After Build
         run: |
@@ -87,7 +96,7 @@ jobs:
       - name: Making artifact
         uses: actions/upload-artifact@v2
         with:
-          name: yuzu-ea-${{ steps.vars.outputs.sha_short }}-mingwcross${{ env.build-suffix }}
+          name: yuzu-ea-${{ steps.vars.outputs.sha_short }}-mingwcross${{ env.build-suffix }}-${{ env.COMPILER }}
           path: yuzu-ea-${{ github.ref_name }}-${{ steps.vars.outputs.sha_short }}-mingwcross.7z
           retention-days: 7
 
