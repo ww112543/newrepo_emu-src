@@ -35,16 +35,22 @@ jobs:
       #Set short SHA
       - name: Set short SHA outputs
         id: vars
-        run: echo "::set-output name=sha_short::$(git rev-parse --short HEAD)" && echo Completed
+        run: echo "::set-output name=sha_short::$(git rev-parse --short HEAD)"
+
+      - name: Remove space for cache key
+        id: nospace
+        run: |
+          var="${{ (inputs || github.event.inputs).flag }}"
+          echo "::set-output name=flag::${var// /}"
 
       - name: Set up cache
         uses: actions/cache@v3
         id: ccache-restore
         with:
           path: ~/.ccache
-          key: ${{ runner.os }}-mingwcross-${{ github.sha }}
+          key: ${{ runner.os }}-mingwcross${{ steps.nospace.outputs.flag }}-${{ github.sha }}
           restore-keys: |
-            ${{ runner.os }}-mingwcross-
+            ${{ runner.os }}-mingwcross${{ steps.nospace.outputs.flag }}-
 
       - name: Create ccache directory
         if: steps.ccache-restore.outputs.cache-hit != 'true'
