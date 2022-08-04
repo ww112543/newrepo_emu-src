@@ -63,7 +63,7 @@ jobs:
         run: |
           mkdir -p "yuzu-build/yuzu-${{ steps.vars.outputs.sha_short }}-mingwcross"
           cp -r package/* "yuzu-build/yuzu-${{ steps.vars.outputs.sha_short }}-mingwcross"
-          7z a -t7z "yuzu-ea-${{ github.ref_name }}-${{ steps.vars.outputs.sha_short }}-mingwcross.7z" -m0=lzma2:d=64m -mx=9 -aoa -mfb=64 -md=32m -ms=on "${{ github.workspace }}/build/yuzu-build/"
+          7z a -t7z "yuzu-ea-${{ github.ref_name }}-${{ steps.vars.outputs.sha_short }}-mingwcross.7z" -m0=lzma2:d=64m -mx=9 -aoa -mfb=64 -md=32m -ms=on "${{ github.workspace }}/yuzu-build/"
 
       #Upload Artifacts
       - name: Making artifact
