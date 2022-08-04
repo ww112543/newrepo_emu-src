@@ -26,33 +26,60 @@ jobs:
         id: vars
         run: echo "::set-output name=sha_short::$(git rev-parse --short HEAD)" && echo Completed
 
-#     - name: Set up cache
-#       uses: actions/cache@v3
-#       id: ccache-restore
-#       with:
-#         path: ~/.ccache
-#         key: ${{ runner.os }}-${{ matrix.type }}-${{ github.sha }}
-#         restore-keys: |
-#           ${{ runner.os }}-${{ matrix.type }}-
+      - name: Set up cache
+        uses: actions/cache@v3
+        id: ccache-restore
+        with:
+          path: ~/.ccache
+          key: ${{ runner.os }}-mingwcross-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-mingwcross-
 
-#     - name: Create ccache directory
-#       if: steps.ccache-restore.outputs.cache-hit != 'true'
-#       run: mkdir -p ~/.ccache
+      - name: Create ccache directory
+        if: steps.ccache-restore.outputs.cache-hit != 'true'
+        run: mkdir -p ~/.ccache
 
-      - name: Build
-        run: ./.github/docker/scripts/linux-mingw/docker.sh
+      #Preparing Build
+      #Note: qtwebengine does not support with this toolchain
+      - name: Before Build
         env:
           ENABLE_COMPATIBILITY_REPORTING: "ON"
           REF_NAME: ${{ github.ref_name }}
           SHA_SHORT: ${{ steps.vars.outputs.sha_short }}
+        run: |
+          ./.github/docker/scripts/linux-mingw/pre-build.sh
 
-      - name: Pack
-        run: ./.github/docker/scripts/linux-mingw/upload.sh
-        env:
-          NO_SOURCE_PACK: "YES"
+      - name: Build
+        run: |
+          cd build
+          ninja yuzu yuzu-cmd
+          ccache -sv
 
-      - name: Upload
-        uses: actions/upload-artifact@v3
+      - name: After Build
+        run: |
+          ./.github/docker/scripts/linux-mingw/post-build.sh
+
+      - name: Compress the Build Folder
+        run: |
+          mkdir "yuzu-build/yuzu-${{ steps.vars.outputs.sha_short }}-mingwcross"
+          cp -r package/* "yuzu-build/yuzu-${{ steps.vars.outputs.sha_short }}-mingwcross"
+          7z a -t7z "yuzu-ea-${{ github.ref_name }}-${{ steps.vars.outputs.sha_short }}-mingwcross.7z" -m0=lzma2:d=64m -mx=9 -aoa -mfb=64 -md=32m -ms=on "${{ github.workspace }}/build/yuzu-build/"
+
+      #Upload Artifacts
+      - name: Making artifact
+        uses: actions/upload-artifact@v2
         with:
           name: yuzu-ea-${{ steps.vars.outputs.sha_short }}-mingwcross
-          path: artifacts/
+          path: yuzu-ea-${{ github.ref_name }}-${{ steps.vars.outputs.sha_short }}-mingwcross.7z
+          retention-days: 7
+
+#     - name: Pack
+#       run: ./.github/docker/scripts/linux-mingw/upload.sh
+#       env:
+#         NO_SOURCE_PACK: "YES"
+
+#     - name: Upload
+#       uses: actions/upload-artifact@v3
+#       with:
+#         name: yuzu-ea-${{ steps.vars.outputs.sha_short }}-mingwcross
+#         path: artifacts/
