@@ -10,7 +10,13 @@ mkdir -p build && cd build
 export LDFLAGS="-fuse-ld=lld"
 # -femulated-tls required due to an incompatibility between GCC and Clang
 # TODO(lat9nq): If this is widespread, we probably need to add this to CMakeLists where appropriate
-export CXXFLAGS="-femulated-tls"
+if [ "${COMP_FLAG}" != "" ]; then
+  export CFLAGS=${COMP_FLAG}
+  export CXXFLAGS="-femulated-tls "${COMP_FLAG}
+  echo "build-suffix=-avx2" >> $GITHUB_ENV
+else
+  export CXXFLAGS="-femulated-tls"
+fi
 cmake .. \
     -DCMAKE_BUILD_TYPE=Release \
     -DCMAKE_TOOLCHAIN_FILE="${PWD}/../CMakeModules/MinGWClangCross.cmake" \

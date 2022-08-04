@@ -2,8 +2,19 @@ name: yuzu Build MinGW (linux) test
 
 on:
   workflow_call:
-
+    inputs:
+      flag:
+        description: 'Compiler flags.'
+        type: string
+        required: false
+        default: ''
   workflow_dispatch:
+    inputs:
+      flag:
+        description: 'Compiler flags.'
+        type: string
+        required: false
+        default: ''
 
 jobs:
   build:
@@ -20,13 +31,6 @@ jobs:
         with:
           submodules: recursive
           fetch-depth: 0
-
-      - name: Test compression
-        run: |
-          mkdir -p "test-compress/test"
-          cd test-compress
-          echo 'test' > file.txt && cd ..
-          7z a -t7z "test-comp.7z" -m0=lzma2:d=64m -mx=9 -aoa -mfb=64 -md=32m -ms=on "test-compress/"
 
       #Set short SHA
       - name: Set short SHA outputs
@@ -53,6 +57,7 @@ jobs:
           ENABLE_COMPATIBILITY_REPORTING: "ON"
           REF_NAME: ${{ github.ref_name }}
           SHA_SHORT: ${{ steps.vars.outputs.sha_short }}
+          COMP_FLAG: ${{ (inputs || github.event.inputs).flag }}
         run: |
           ./.github/docker/scripts/linux-mingw/pre-build.sh
 
@@ -76,7 +81,7 @@ jobs:
       - name: Making artifact
         uses: actions/upload-artifact@v2
         with:
-          name: yuzu-ea-${{ steps.vars.outputs.sha_short }}-mingwcross
+          name: yuzu-ea-${{ steps.vars.outputs.sha_short }}-mingwcross${{ env.build-suffix }}
           path: yuzu-ea-${{ github.ref_name }}-${{ steps.vars.outputs.sha_short }}-mingwcross.7z
           retention-days: 7
 
