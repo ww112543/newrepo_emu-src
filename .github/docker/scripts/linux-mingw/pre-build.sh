@@ -7,6 +7,9 @@ set -e
 ccache -sv
 
 mkdir -p build && cd build
+if [ "${POLLY_ENABLE}" == "true" ]; then
+pollyflag="-Xclang -load -Xclang LLVMPolly.so "
+fi
 if [ "${COMPILER}" == "clang" ]; then
   toolchainfile="${PWD}/../CMakeModules/MinGWClangCross.cmake"
   export LDFLAGS="-fuse-ld=lld"
@@ -16,13 +19,13 @@ fi
 # -femulated-tls required due to an incompatibility between GCC and Clang
 # TODO(lat9nq): If this is widespread, we probably need to add this to CMakeLists where appropriate
 if [ "${COMP_FLAG}" != "" ]; then
-  export CFLAGS="${COMP_FLAG}"
   if [ "${COMPILER}" == "clang" ]; then
-    export CXXFLAGS="-femulated-tls ${COMP_FLAG}"
+    export CFLAGS="${pollyflag}${COMP_FLAG}"
+    export CXXFLAGS="${pollyflag}-femulated-tls ${COMP_FLAG}"
   else
+    export CFLAGS="${COMP_FLAG}"
     export CXXFLAGS="${COMP_FLAG}"
   fi
-  echo "build-suffix=-avx2" >> $GITHUB_ENV
 elif [ "${COMPILER}" == "clang" ]; then
   export CXXFLAGS="-femulated-tls"
 fi
