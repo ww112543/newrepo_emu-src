@@ -187,6 +187,8 @@ jobs:
 
       - name: Install buildcache
         run: |
+          choco install wget
+          call refreshenv
           wget https://github.com/mbitsnbites/buildcache/releases/download/v0.27.6/buildcache-windows.zip
           7z x buildcache-windows.zip
           copy buildcache\bin\buildcache.exe C:\ProgramData\chocolatey\bin
