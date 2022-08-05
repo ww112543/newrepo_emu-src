@@ -18,6 +18,11 @@ on:
         type: string
         required: false
         default: ''
+      lflag:
+        description: 'Linker flags.'
+        type: string
+        required: false
+        default: ''
       suffix:
         description: 'Build suffix.'
         type: string
@@ -38,6 +43,11 @@ on:
         default: false
       flag:
         description: 'Compiler flags.'
+        type: string
+        required: false
+        default: ''
+      lflag:
+        description: 'Linker flags.'
         type: string
         required: false
         default: ''
@@ -95,6 +105,7 @@ jobs:
           REF_NAME: ${{ github.ref_name }}
           SHA_SHORT: ${{ steps.vars.outputs.sha_short }}
           COMP_FLAG: ${{ (inputs || github.event.inputs).flag }}
+          LD_FLAG: ${{ (inputs || github.event.inputs).lflag }}
           POLLY_ENABLE: ${{ (inputs || github.event.inputs).polly }}
         run: |
           ./.github/docker/scripts/linux-mingw/pre-build.sh

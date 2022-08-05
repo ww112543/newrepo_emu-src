@@ -10,11 +10,21 @@ mkdir -p build && cd build
 if [ "${POLLY_ENABLE}" == "true" ]; then
 pollyflag="-Xclang -load -Xclang LLVMPolly.so "
 fi
+#toolchain
 if [ "${COMPILER}" == "clang" ]; then
   toolchainfile="${PWD}/../CMakeModules/MinGWClangCross.cmake"
-  export LDFLAGS="-fuse-ld=lld"
 else
   toolchainfile="${PWD}/../CMakeModules/MinGWCross.cmake"
+fi
+#linker
+if [ "${LD_FLAG}" != "" ]; then
+  if [ "${COMPILER}" == "clang" ]; then
+    export LDFLAGS="-fuse-ld=lld ${LD_FLAG}"
+  else
+    export LDFLAGS="${LD_FLAG}"
+  fi
+elif [ "${COMPILER}" == "clang" ]; then
+  export LDFLAGS="-fuse-ld=lld"
 fi
 # -femulated-tls required due to an incompatibility between GCC and Clang
 # TODO(lat9nq): If this is widespread, we probably need to add this to CMakeLists where appropriate
