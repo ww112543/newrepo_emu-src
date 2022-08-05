@@ -42,6 +42,8 @@ fi
 cmake .. \
     -DCMAKE_BUILD_TYPE=Release \
     -DCMAKE_TOOLCHAIN_FILE="${toolchainfile}" \
+    -DCMAKE_C_FLAGS_RELEASE="-DNDEBUG" \
+    -DCMAKE_CXX_FLAGS_RELEASE="-DNDEBUG" \
     -DTITLE_BAR_FORMAT_IDLE="yuzu Early Access ${REF_NAME}-${SHA_SHORT}" \
     -DTITLE_BAR_FORMAT_RUNNING="yuzu Early Access ${REF_NAME}-${SHA_SHORT} | {3}" \
     -DENABLE_COMPATIBILITY_LIST_DOWNLOAD=ON \
