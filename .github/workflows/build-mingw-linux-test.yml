@@ -80,7 +80,7 @@ jobs:
       - name: Build
         run: |
           cd build
-          ninja yuzu yuzu-cmd
+          ninja -v yuzu yuzu-cmd
 
       - name: After Build
         run: |
