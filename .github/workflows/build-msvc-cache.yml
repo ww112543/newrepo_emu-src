@@ -187,9 +187,7 @@ jobs:
 
       - name: Install buildcache
         run: |
-          path
           set PATH=%PATH%;C:\WINDOWS\System32
-          path
           choco install wget
           call refreshenv
           wget https://github.com/mbitsnbites/buildcache/releases/download/v0.27.6/buildcache-windows.zip
@@ -197,7 +195,6 @@ jobs:
           copy buildcache\bin\buildcache.exe C:\ProgramData\chocolatey\bin
           rmdir buildcache
           echo %PATH% >> %GITHUB_PATH%
-          path
         shell: cmd
 
       #Preparing Build
@@ -221,6 +218,7 @@ jobs:
         run: |
           buildcache -s
           mkdir ${{ github.workspace }}\build\bin\yuzu-build\yuzu-${{ steps.vars.outputs.sha_short }}-msvc
+          mv ${{ github.workspace }}\build\bin\*.exe ${{ github.workspace }}\build\bin\Release
           mv ${{ github.workspace }}\build\bin\Release\* ${{ github.workspace }}\build\bin\yuzu-build\yuzu-${{ steps.vars.outputs.sha_short }}-msvc
           del ${{ github.workspace }}\build\bin\yuzu-build\yuzu-${{ steps.vars.outputs.sha_short }}-msvc\*.pdb
         shell: pwsh
@@ -232,7 +230,7 @@ jobs:
           
       #Upload Artifacts
       - name: Making artifact
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: yuzu-ea-${{ steps.vars.outputs.sha_short }}-msvc${{ env.simd-suffix }}
           path: yuzu-ea-${{ github.ref_name }}-${{ steps.vars.outputs.sha_short }}-msvc${{ env.simd-suffix }}.7z
