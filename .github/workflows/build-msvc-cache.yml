@@ -28,6 +28,11 @@ on:
         type: string
         required: false
         default: 'default'
+      cache:
+        description: 'Weather to use buildcache.'
+        type: boolean
+        required: false
+        default: true
 
   workflow_dispatch:
     inputs:
@@ -58,13 +63,16 @@ on:
         type: string
         required: false
         default: 'default'
+      cache:
+        description: 'Weather to use buildcache.'
+        type: boolean
+        required: false
+        default: true
 
 jobs:
   build:
     name: Building yuzu Binaries with MSVC (cache)
     runs-on: ${{ (inputs || github.event.inputs).runos }}
-#   env:
-#     VCPKG_TOOLCHAIN_FILE: "${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake"
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - name: actions/checkout
@@ -113,7 +121,6 @@ jobs:
 
       #Set extansion compiler arguments
       - name: Set extansion compiler arguments
-        id: var1
 #       if: ${{ (inputs || github.event.inputs).simd != '' }}
         run: |
           os=${{ (inputs || github.event.inputs).runos }}
@@ -126,7 +133,6 @@ jobs:
           link_args="/machine:x64 "
           cmake_args="-GNinja"
           bsuffix=""
-          cache="true"
           if [ "$os" == "windows-latest" ]
           then
               bsuffix=$bsuffix"-vs2022"
@@ -139,7 +145,6 @@ jobs:
               comp_args_cxx=$comp_args_cxx"/GL "
               comp_args_c=$comp_args_c"/GL "
               link_args=$link_args"/LTCG "
-              cache="false"
           fi
           if [ "$fpc" == "True" ] || [ "$fpc" == "true" ] && [ "$os" == "windows-latest" ]
           then
@@ -178,11 +183,10 @@ jobs:
           echo 'build-gen='$cmake_args >> $GITHUB_ENV
           echo 'build-arg-ext=-DCMAKE_CXX_FLAGS="'$comp_args_cxx'"' '-DCMAKE_C_FLAGS="'$comp_args_c'"' '-DCMAKE_EXE_LINKER_FLAGS="'$link_args'"' >> $GITHUB_ENV
           echo 'simd-suffix='$bsuffix >> $GITHUB_ENV
-          echo "::set-output name=cache::${cache}"
         shell: bash
         
       - name: Set up cache
-        if: ${{ steps.var1.outputs.cache != 'false' }}
+        if: ${{ (inputs || github.event.inputs).cache != 'false' }}
         uses: actions/cache@v3
         with:
           path: ~/.buildcache

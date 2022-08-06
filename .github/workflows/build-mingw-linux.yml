@@ -8,8 +8,23 @@ on:
         type: string
         required: false
         default: 'clang'
+      polly:
+        description: 'Load polly plugin.Required clang.'
+        type: boolean
+        required: false
+        default: false
       flag:
         description: 'Compiler flags.'
+        type: string
+        required: false
+        default: ''
+      lflag:
+        description: 'Linker flags.'
+        type: string
+        required: false
+        default: ''
+      suffix:
+        description: 'Build suffix.'
         type: string
         required: false
         default: ''
@@ -21,8 +36,23 @@ on:
         options:
         - clang
         - gcc
+      polly:
+        description: 'Load polly plugin.Required clang.'
+        type: boolean
+        required: false
+        default: false
       flag:
         description: 'Compiler flags.'
+        type: string
+        required: false
+        default: ''
+      lflag:
+        description: 'Linker flags.'
+        type: string
+        required: false
+        default: ''
+      suffix:
+        description: 'Build suffix.'
         type: string
         required: false
         default: ''
@@ -33,6 +63,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       COMPILER: ${{ (inputs || github.event.inputs).compiler }}
+      build-suffix: ${{ (inputs || github.event.inputs).suffix }}
     container:
       image: yuzuemu/build-environments:linux-mingw
       options: -u 1001
@@ -74,6 +105,8 @@ jobs:
           REF_NAME: ${{ github.ref_name }}
           SHA_SHORT: ${{ steps.vars.outputs.sha_short }}
           COMP_FLAG: ${{ (inputs || github.event.inputs).flag }}
+          LD_FLAG: ${{ (inputs || github.event.inputs).lflag }}
+          POLLY_ENABLE: ${{ (inputs || github.event.inputs).polly }}
         run: |
           ./.github/docker/scripts/linux-mingw/pre-build.sh
 
@@ -90,12 +123,12 @@ jobs:
         run: |
           mkdir -p "yuzu-build/yuzu-${{ steps.vars.outputs.sha_short }}-mingwcross"
           cp -r --preserve=timestamps package/* "yuzu-build/yuzu-${{ steps.vars.outputs.sha_short }}-mingwcross"
-          7z a -t7z "yuzu-ea-${{ github.ref_name }}-${{ steps.vars.outputs.sha_short }}-mingwcross.7z" -m0=lzma2:d=64m -mx=9 -aoa -mfb=64 -md=32m -ms=on "yuzu-build/*"
+          7z a -t7z "yuzu-ea-${{ github.ref_name }}-${{ steps.vars.outputs.sha_short }}-mingwcross${{ env.build-suffix }}-${{ env.COMPILER }}.7z" -m0=lzma2:d=64m -mx=9 -aoa -mfb=64 -md=32m -ms=on "yuzu-build/*"
 
       #Upload Artifacts
       - name: Making artifact
         uses: actions/upload-artifact@v3
         with:
           name: yuzu-ea-${{ steps.vars.outputs.sha_short }}-mingwcross${{ env.build-suffix }}-${{ env.COMPILER }}
-          path: yuzu-ea-${{ github.ref_name }}-${{ steps.vars.outputs.sha_short }}-mingwcross.7z
+          path: yuzu-ea-${{ github.ref_name }}-${{ steps.vars.outputs.sha_short }}-mingwcross${{ env.build-suffix }}-${{ env.COMPILER }}.7z
           retention-days: 7

@@ -70,7 +70,7 @@ jobs:
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - name: actions/checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       #Generate submodules list
       - name: Generate submodules list
@@ -225,7 +225,7 @@ jobs:
           
       #Upload Artifacts
       - name: Making artifact
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: yuzu-ea-${{ steps.vars.outputs.sha_short }}-msvc${{ env.simd-suffix }}
           path: yuzu-ea-${{ github.ref_name }}-${{ steps.vars.outputs.sha_short }}-msvc${{ env.simd-suffix }}.7z
