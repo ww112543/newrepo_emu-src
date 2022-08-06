@@ -186,7 +186,7 @@ jobs:
         shell: bash
         
       - name: Set up cache
-        if: ${{ (inputs || github.event.inputs).cache != 'false' }}
+        if: ${{ (inputs || github.event.inputs).cache != false }}
         uses: actions/cache@v3
         with:
           path: ~/.buildcache
