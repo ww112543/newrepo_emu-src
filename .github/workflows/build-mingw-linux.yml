@@ -89,9 +89,9 @@ jobs:
         id: ccache-restore
         with:
           path: ~/.ccache
-          key: ${{ runner.os }}-mingwcross${{ steps.nospace.outputs.flag }}-${{ env.COMPILER }}-${{ github.sha }}
+          key: ${{ runner.os }}-mingwcross${{ steps.nospace.outputs.flag }}-v2-${{ env.COMPILER }}-${{ github.sha }}
           restore-keys: |
-            ${{ runner.os }}-mingwcross${{ steps.nospace.outputs.flag }}-${{ env.COMPILER }}-
+            ${{ runner.os }}-mingwcross${{ steps.nospace.outputs.flag }}-v2-${{ env.COMPILER }}-
 
       - name: Create ccache directory
         if: steps.ccache-restore.outputs.cache-hit != 'true'

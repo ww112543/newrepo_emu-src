@@ -37,7 +37,11 @@ if [ "${COMP_FLAG}" != "" ]; then
     export CXXFLAGS="${COMP_FLAG}"
   fi
 elif [ "${COMPILER}" == "clang" ]; then
-  export CXXFLAGS="-femulated-tls"
+  export CFLAGS="-O3"
+  export CXXFLAGS="-femulated-tls -O3"
+else
+  export CFLAGS="-O3"
+  export CXXFLAGS="-O3"
 fi
 cmake .. \
     -DCMAKE_BUILD_TYPE=Release \
