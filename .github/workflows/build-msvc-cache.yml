@@ -187,6 +187,9 @@ jobs:
 
       - name: Install buildcache
         run: |
+          path
+          set PATH=%PATH%;C:\WINDOWS\System32
+          path
           choco install wget
           call refreshenv
           wget https://github.com/mbitsnbites/buildcache/releases/download/v0.27.6/buildcache-windows.zip
@@ -194,6 +197,7 @@ jobs:
           copy buildcache\bin\buildcache.exe C:\ProgramData\chocolatey\bin
           rmdir buildcache
           echo %PATH% >> %GITHUB_PATH%
+          path
         shell: cmd
 
       #Preparing Build
@@ -206,11 +210,12 @@ jobs:
           mkdir build && cd build
           cmake --version
           cmake .. ${{ env.build-gen }} ${{ env.build-arg }} ${{ env.build-arg-ext }}
-        shell: pwsh
 
       #Build the .sln
       - name: Build app for release
-        run: cmake --build build
+        run: |
+          cmake --build build
+        shell: cmd
 
       - name: After Build
         run: |
