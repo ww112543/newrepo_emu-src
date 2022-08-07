@@ -33,6 +33,11 @@ on:
         type: boolean
         required: false
         default: true
+      suffix:
+        description: 'Build suffix.'
+        type: string
+        required: false
+        default: ''
 
   workflow_dispatch:
     inputs:
@@ -68,11 +73,18 @@ on:
         type: boolean
         required: false
         default: true
+      suffix:
+        description: 'Build suffix.'
+        type: string
+        required: false
+        default: ''
 
 jobs:
   build:
     name: Building yuzu Binaries with MSVC (cache)
     runs-on: ${{ (inputs || github.event.inputs).runos }}
+    env:
+      build-suffix: ${{ (inputs || github.event.inputs).suffix }}
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - name: actions/checkout
@@ -168,12 +180,10 @@ jobs:
           then
               comp_args_cxx=$comp_args_cxx"/arch:AVX "
               comp_args_c=$comp_args_c"/arch:AVX "
-              bsuffix=$bsuffix"-avx"
           elif [ "$simd" = "AVX2" ] || [ "$simd" = "avx2" ]
           then
               comp_args_cxx=$comp_args_cxx"/arch:AVX2 "
               comp_args_c=$comp_args_c"/arch:AVX2 "
-              bsuffix=$bsuffix"-avx2"
           elif [ "$simd" = "" ]
           then
               echo ''
@@ -182,7 +192,7 @@ jobs:
           fi
           echo 'build-gen='$cmake_args >> $GITHUB_ENV
           echo 'build-arg-ext=-DCMAKE_CXX_FLAGS="'$comp_args_cxx'"' '-DCMAKE_C_FLAGS="'$comp_args_c'"' '-DCMAKE_EXE_LINKER_FLAGS="'$link_args'"' >> $GITHUB_ENV
-          echo 'simd-suffix='$bsuffix >> $GITHUB_ENV
+          echo 'build-suffix=${{ env.build-suffix }}'$bsuffix >> $GITHUB_ENV
         shell: bash
         
       - name: Set up cache
@@ -190,9 +200,9 @@ jobs:
         uses: actions/cache@v3
         with:
           path: ~/.buildcache
-          key: ${{ runner.os }}-${{ env.simd-suffix }}-msvc-${{ github.sha }}
+          key: ${{ runner.os }}-${{ env.build-suffix }}-msvc-${{ github.sha }}
           restore-keys: |
-            ${{ runner.os }}-${{ env.simd-suffix }}-msvc-
+            ${{ runner.os }}-${{ env.build-suffix }}-msvc-
 
       - name: Install buildcache
         run: |
@@ -234,14 +244,14 @@ jobs:
 
       - name: Compress the Build Folder
         run: |
-          7z a -t7z "yuzu-ea-${{ github.ref_name }}-${{ steps.vars.outputs.sha_short }}-msvc${{ env.simd-suffix }}.7z" -m0=lzma2:d=64m -mx=9 -aoa -mfb=64 -md=32m -ms=on "${{ github.workspace }}\build\bin\yuzu-build"
+          7z a -t7z "yuzu-ea-${{ github.ref_name }}-${{ steps.vars.outputs.sha_short }}-msvc${{ env.build-suffix }}.7z" -m0=lzma2:d=64m -mx=9 -aoa -mfb=64 -md=32m -ms=on "${{ github.workspace }}\build\bin\yuzu-build"
         shell: pwsh
           
       #Upload Artifacts
       - name: Making artifact
         uses: actions/upload-artifact@v3
         with:
-          name: yuzu-ea-${{ steps.vars.outputs.sha_short }}-msvc${{ env.simd-suffix }}
-          path: yuzu-ea-${{ github.ref_name }}-${{ steps.vars.outputs.sha_short }}-msvc${{ env.simd-suffix }}.7z
+          name: yuzu-ea-${{ steps.vars.outputs.sha_short }}-msvc${{ env.build-suffix }}
+          path: yuzu-ea-${{ github.ref_name }}-${{ steps.vars.outputs.sha_short }}-msvc${{ env.build-suffix }}.7z
           retention-days: 7
 

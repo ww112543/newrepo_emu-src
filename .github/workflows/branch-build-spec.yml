@@ -27,6 +27,7 @@ jobs:
       GL: true
       contract-fp: true
       cache: false
+      suffix: '-avx2'
 
   build-mingw-clang:
     uses: ./.github/workflows/build-mingw-linux.yml
