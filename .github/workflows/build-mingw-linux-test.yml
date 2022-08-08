@@ -139,11 +139,12 @@ jobs:
           retention-days: 7
 
       - name: Compress build folder
-        if: ${{ (inputs || github.event.inputs).upload-work != false }}
+        if: ${{ inputs.upload-work != false }}
         run: |
           7z a -t7z "build-folder.7z" -m0=lzma2:d=64m -mx=9 -aoa -mfb=64 -md=32m -ms=on "build/*"
 
       - name: Upload build folder
+        if: ${{ inputs.upload-work != false }}
         uses: actions/upload-artifact@v3
         with:
           name: build-folder

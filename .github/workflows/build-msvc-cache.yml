@@ -237,7 +237,7 @@ jobs:
         run: |
           buildcache -s
           mkdir ${{ github.workspace }}\build\bin\yuzu-build\yuzu-${{ steps.vars.outputs.sha_short }}-msvc
-          mv ${{ github.workspace }}\build\bin\*.exe ${{ github.workspace }}\build\bin\Release
+          mv ${{ github.workspace }}\build\bin\*.* ${{ github.workspace }}\build\bin\Release
           mv ${{ github.workspace }}\build\bin\Release\* ${{ github.workspace }}\build\bin\yuzu-build\yuzu-${{ steps.vars.outputs.sha_short }}-msvc
           del ${{ github.workspace }}\build\bin\yuzu-build\yuzu-${{ steps.vars.outputs.sha_short }}-msvc\*.pdb
         shell: pwsh
