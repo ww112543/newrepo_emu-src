@@ -56,6 +56,11 @@ on:
         type: string
         required: false
         default: ''
+      upload-work:
+        description: 'Upload build folder.'
+        type: boolean
+        required: false
+        default: false
 
 jobs:
   build:
@@ -131,6 +136,18 @@ jobs:
         with:
           name: yuzu-ea-${{ steps.vars.outputs.sha_short }}-mingwcross${{ env.build-suffix }}-${{ env.COMPILER }}
           path: yuzu-ea-${{ github.ref_name }}-${{ steps.vars.outputs.sha_short }}-mingwcross${{ env.build-suffix }}-${{ env.COMPILER }}.7z
+          retention-days: 7
+
+      - name: Compress build folder
+        if: ${{ (inputs || github.event.inputs).upload-work != false }}
+        run: |
+          7z a -t7z "build-folder.7z" -m0=lzma2:d=64m -mx=9 -aoa -mfb=64 -md=32m -ms=on "build/*"
+
+      - name: Upload build folder
+        uses: actions/upload-artifact@v3
+        with:
+          name: build-folder
+          path: build-folder.7z
           retention-days: 7
 
 #     - name: Pack
