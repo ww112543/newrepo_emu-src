@@ -38,6 +38,13 @@ jobs:
       flag: '-O3 -march=znver1 -mtune=znver1'
       suffix: '-o'
 
+  build-mingw-clang-polly:
+    uses: ./.github/workflows/build-mingw-linux.yml
+    with:
+      polly: true
+      flag: '-Xclang -fpass-plugin=LLVMPolly.so -Ofast -march=znver1 -mtune=znver1 -DFLOAT_APPROX=1 -mllvm -polly -mllvm -polly-vectorizer=stripmine -mllvm -polly-ast-use-context -mllvm -polly-invariant-load-hoisting -mllvm -polly-loopfusion-greedy -mllvm -polly-run-inliner -mllvm -polly-run-dce'
+      suffix: '-o-polly-fast'
+
   build-mingw-gcc:
     uses: ./.github/workflows/build-mingw-linux.yml
     with:
