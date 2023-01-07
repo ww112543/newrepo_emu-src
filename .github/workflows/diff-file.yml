@@ -30,23 +30,43 @@ jobs:
         with:
           repository: 'pineappleEA/pineapple-src'
           path: './upstream-pinapple'
-          fetch-depth: 0
+
+      - name: Fetch upstream tags
+        run: |
+          cd upstream-pinapple
+          git fetch --tags origin
+
+      - name: Downloading upstream repository release
+        uses: robinraju/release-downloader@v1.7
+        with:
+          repository: 'pineappleEA/pineapple-src'
+          latest: true
+          fileName: '*.zip'
+
+      - name: Extracting files
+        run: |
+          mkdir temp && cd temp
+          7z e ../*.zip -o. "*/*.tar.xz"
+          7z x -y *.tar.xz
+          7z x -y *.tar -o./exted
+          mkdir ../upstream-pinapple-src
+          mv -f ./exted/*/* ../upstream-pinapple-src
 
       - name: Copy to current repository
         run: |
-          rsync -rlcih --size-only --progress --stats --exclude='README.md' --exclude='.gitattributes' --exclude='.gitignore' --exclude='.git/' --exclude='.github/' --exclude='vcpkg.json' --exclude='license.txt' --exclude='tls12-download.exe' --exclude='Findopus.cmake' --delete ./upstream-pinapple/ ./current
+          rsync -rlcih --size-only --progress --stats --exclude='README.md' --exclude='.gitattributes' --exclude='.gitignore' --exclude='.git/' --exclude='.github/' --exclude='vcpkg.json' --exclude='license.txt' --exclude='.gitattributes' --exclude='lgtm.yml' --exclude='.gitmodules' --exclude='.ci/' --exclude='.reuse/' --exclude='patches/' --delete ./upstream-pinapple-src/ ./current
 
       - name: Get current day
         id: date
         run: |
-          echo "::set-output name=date::$(date +'%Y-%m-%d %H:%M:%S')"
+          echo "date=$(date +'%Y-%m-%d %H:%M:%S')" >> $GITHUB_OUTPUT
 
       - name: Get Early access number
         id: eaver
         run: |
           cd upstream-pinapple
           commit="$(git rev-list --tags --max-count=1)"
-          echo "::set-output name=ver::$(git describe --tags $commit)"
+          echo "ver=$(git describe --tags $commit)" >> $GITHUB_OUTPUT
 
       - name: Commit to remote
         uses: stefanzweifel/git-auto-commit-action@v4
