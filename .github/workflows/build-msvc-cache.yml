@@ -102,7 +102,7 @@ jobs:
       #Set short SHA
       - name: Set short SHA outputs
         id: vars
-        run: echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT && echo Completed
+        run: echo sha_short=$(git rev-parse --short HEAD) >> $GITHUB_OUTPUT && echo Completed
         shell: pwsh
 
       #Setup vcpkg

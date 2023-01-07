@@ -19,14 +19,14 @@ jobs:
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - name: actions/checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           path: './current'
           ref : ${{ github.head_ref }}
           token : ${{ secrets.PAT }}
 
       - name: Cloneing upstream repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           repository: 'pineappleEA/pineapple-src'
           path: './upstream-pinapple'
