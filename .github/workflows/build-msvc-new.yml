@@ -71,6 +71,8 @@ jobs:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - name: actions/checkout
         uses: actions/checkout@v3
+        with:
+          submodules: recursive
 
       #Generate submodules list
       - name: Generate submodules list
@@ -89,7 +91,7 @@ jobs:
       #Set short SHA
       - name: Set short SHA outputs
         id: vars
-        run: echo "::set-output name=sha_short::$(git rev-parse --short HEAD)" && echo Completed
+        run: echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT && echo Completed
         shell: pwsh
 
       #Setup vcpkg
@@ -106,7 +108,7 @@ jobs:
       - name: Prepare Vulkan SDK
         uses: humbletim/setup-vulkan-sdk@v1.2.0
         with:
-          vulkan-query-version: 1.3.211.0
+          vulkan-query-version: latest
           vulkan-components: Vulkan-Headers, Glslang
           vulkan-use-cache: true
 
@@ -133,9 +135,7 @@ jobs:
           gl=${{ (inputs || github.event.inputs).GL }}
           fpc=${{ (inputs || github.event.inputs).contract-fp }}
           fpt=${{ (inputs || github.event.inputs).type-fp }}
-          comp_args_cxx="/DWIN32 /D_WINDOWS /GR /EHsc "
-          comp_args_c="/DWIN32 /D_WINDOWS "
-          link_args="/machine:x64 "
+          comp_args_cxx="/DWIN32 /D_WINDOWS /GR /EHsc /Gw /GA /Gr /Ob3 "
           cmake_args="-G "
           bsuffix=""
           if [ "$os" == "windows-latest" ]
@@ -150,36 +150,28 @@ jobs:
           if [ "$gl" == "True" ] || [ "$gl" == "true" ]
           then
               comp_args_cxx=$comp_args_cxx"/GL "
-              comp_args_c=$comp_args_c"/GL "
-              link_args=$link_args"/LTCG "
           fi
           if [ "$fpc" == "True" ] || [ "$fpc" == "true" ] && [ "$os" == "windows-latest" ]
           then
               comp_args_cxx=$comp_args_cxx"/fp:contract "
-              comp_args_c=$comp_args_c"/fp:contract "
           fi
           if [ "$fpt" == "fast" ]
           then
               comp_args_cxx=$comp_args_cxx"/fp:fast "
-              comp_args_c=$comp_args_c"/fp:fast "
           elif [ "$fpt" == "precise" ]
           then
               comp_args_cxx=$comp_args_cxx"/fp:precise "
-              comp_args_c=$comp_args_c"/fp:precise "
           elif [ "$fpt" == "strict" ]
           then
               comp_args_cxx=$comp_args_cxx"/fp:strict "
-              comp_args_c=$comp_args_c"/fp:strict "
           fi
           if [ "$simd" = "AVX" ] || [ "$simd" = "avx" ]
           then
               comp_args_cxx=$comp_args_cxx"/arch:AVX "
-              comp_args_c=$comp_args_c"/arch:AVX "
               bsuffix=$bsuffix"-avx"
           elif [ "$simd" = "AVX2" ] || [ "$simd" = "avx2" ]
           then
               comp_args_cxx=$comp_args_cxx"/arch:AVX2 "
-              comp_args_c=$comp_args_c"/arch:AVX2 "
               bsuffix=$bsuffix"-avx2"
           elif [ "$simd" = "" ]
           then
@@ -188,24 +180,20 @@ jobs:
               echo 'Unknown instruction set' $simd
           fi
           echo 'build-gen='$cmake_args >> $GITHUB_ENV
-          echo 'build-arg-ext=-DCMAKE_CXX_FLAGS="'$comp_args_cxx'"' '-DCMAKE_C_FLAGS="'$comp_args_c'"' '-DCMAKE_EXE_LINKER_FLAGS="'$link_args'"' >> $GITHUB_ENV
+          echo 'build-arg-ext=-DCMAKE_CXX_FLAGS="'$comp_args_cxx'"' >> $GITHUB_ENV
           echo 'simd-suffix='$bsuffix >> $GITHUB_ENV
         shell: bash
 
       #Preparing Build
       - name: Before Build
         env:
-          build-arg: -DCMAKE_TOOLCHAIN_FILE=${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake -DYUZU_USE_BUNDLED_QT=1 -DYUZU_USE_BUNDLED_SDL2=1 -DYUZU_USE_QT_WEB_ENGINE=ON -DYUZU_TESTS=OFF -DUSE_DISCORD_PRESENCE=ON -DTITLE_BAR_FORMAT_IDLE="yuzu Early Access ${{ github.ref_name }}-${{ steps.vars.outputs.sha_short }}" -DTITLE_BAR_FORMAT_RUNNING="yuzu Early Access ${{ github.ref_name }}-${{ steps.vars.outputs.sha_short }} | {3}" -DENABLE_COMPATIBILITY_LIST_DOWNLOAD=ON -DENABLE_QT_TRANSLATION=ON -DCMAKE_BUILD_TYPE=Release
+          build-arg: -DCMAKE_TOOLCHAIN_FILE=${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake -DCMAKE_INTERPROCEDURAL_OPTIMIZATION=ON -DCMAKE_POLICY_DEFAULT_CMP0069=NEW -DUSE_EXTERNAL_VCPKG=ON -DYUZU_USE_BUNDLED_VCPKG=OFF -DYUZU_USE_BUNDLED_QT=1 -DYUZU_USE_BUNDLED_SDL2=1 -DYUZU_USE_QT_WEB_ENGINE=ON -DYUZU_TESTS=OFF -DUSE_DISCORD_PRESENCE=ON -DTITLE_BAR_FORMAT_IDLE="yuzu Early Access ${{ github.ref_name }}-${{ steps.vars.outputs.sha_short }}" -DTITLE_BAR_FORMAT_RUNNING="yuzu Early Access ${{ github.ref_name }}-${{ steps.vars.outputs.sha_short }} | {3}" -DENABLE_COMPATIBILITY_LIST_DOWNLOAD=OFF -DENABLE_QT_TRANSLATION=ON -DCMAKE_BUILD_TYPE=Release
         run: |
           cd build && echo Build
           echo Build
           cmake --version
           cmake .. ${{ env.build-gen }} ${{ env.build-arg }} ${{ env.build-arg-ext }}
         shell: pwsh
-
-#     #Cache files
-#     - name: Cache libraries and files
-#       uses: ./.github/workflows/stript/cache_files
 
       #Build the .sln
       - name: Build app for release
