@@ -191,7 +191,7 @@ jobs:
 
       #Build the .sln
       - name: Build app for release
-        run: msbuild build\yuzu.sln /p:WarningLevel=0 /p:Configuration=Release
+        run: msbuild build\yuzu.sln /t:yuzu /p:WarningLevel=0 /p:Configuration=Release
 
       - name: After Build
         run: |
@@ -202,6 +202,7 @@ jobs:
 
       - name: Compress the Build Folder
         run: |
+          7z a -t7z "yuzu-ea-${{ github.ref_name }}-${{ env.GITREV }}-msvc-exe${{ env.simd-suffix }}.7z" -m0=lzma2:d=64m -mx=9 -aoa -mfb=64 -md=32m -ms=on ".\build\bin\yuzu-build\*\*.exe"
           7z a -t7z "yuzu-ea-${{ github.ref_name }}-${{ env.GITREV }}-msvc${{ env.simd-suffix }}.7z" -m0=lzma2:d=64m -mx=9 -aoa -mfb=64 -md=32m -ms=on "${{ github.workspace }}\build\bin\yuzu-build"
         shell: pwsh
           
@@ -211,6 +212,13 @@ jobs:
         with:
           name: yuzu-ea-${{ env.GITREV }}-msvc${{ env.simd-suffix }}
           path: yuzu-ea-${{ github.ref_name }}-${{ env.GITREV }}-msvc${{ env.simd-suffix }}.7z
+          retention-days: 7
+
+      - name: Making exe artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: yuzu-ea-${{ env.GITREV }}-msvc-exe${{ env.simd-suffix }}
+          path: yuzu-ea-${{ github.ref_name }}-${{ env.GITREV }}-msvc-exe${{ env.simd-suffix }}.7z
           retention-days: 7
 
 #     #Publishing to Release
