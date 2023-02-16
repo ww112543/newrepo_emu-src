@@ -24,7 +24,6 @@
 #include "core/hle/service/am/idle.h"
 #include "core/hle/service/am/omm.h"
 #include "core/hle/service/am/spsm.h"
-#include "core/hle/service/am/tcap.h"
 #include "core/hle/service/apm/apm_controller.h"
 #include "core/hle/service/apm/apm_interface.h"
 #include "core/hle/service/bcat/backend/backend.h"
@@ -1571,7 +1570,7 @@ void IApplicationFunctions::GetDisplayVersion(Kernel::HLERequestContext& ctx) {
         const auto& version = res.first->GetVersionString();
         std::copy(version.begin(), version.end(), version_string.begin());
     } else {
-        constexpr char default_version[]{"1.0.0"};
+        static constexpr char default_version[]{"1.0.0"};
         std::memcpy(version_string.data(), default_version, sizeof(default_version));
     }
 
@@ -1840,7 +1839,6 @@ void InstallInterfaces(SM::ServiceManager& service_manager, NVFlinger::NVFlinger
     std::make_shared<IdleSys>(system)->InstallAsService(service_manager);
     std::make_shared<OMM>(system)->InstallAsService(service_manager);
     std::make_shared<SPSM>(system)->InstallAsService(service_manager);
-    std::make_shared<TCAP>(system)->InstallAsService(service_manager);
 }
 
 IHomeMenuFunctions::IHomeMenuFunctions(Core::System& system_)
