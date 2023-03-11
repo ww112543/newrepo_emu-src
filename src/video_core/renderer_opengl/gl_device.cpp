@@ -328,6 +328,12 @@ void main() {
 })");
 }
 
+u64 Device::GetTotalDedicatedVideoMemory() const {
+    GLint tot_avail_mem_kb = 0;
+    glGetIntegerv(GL_GPU_MEMORY_INFO_TOTAL_AVAILABLE_MEMORY_NVX, &tot_avail_mem_kb);
+    return static_cast<u64>(tot_avail_mem_kb) * 1_KiB;
+}
+
 u64 Device::GetCurrentDedicatedVideoMemory() const {
     GLint cur_avail_mem_kb = 0;
     glGetIntegerv(GL_GPU_MEMORY_INFO_CURRENT_AVAILABLE_VIDMEM_NVX, &cur_avail_mem_kb);

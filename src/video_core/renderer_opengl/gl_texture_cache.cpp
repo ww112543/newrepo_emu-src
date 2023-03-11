@@ -541,7 +541,7 @@ TextureCacheRuntime::TextureCacheRuntime(const Device& device_, ProgramManager& 
 
     device_access_memory = [this]() -> u64 {
         if (device.CanReportMemoryUsage()) {
-            return device.GetCurrentDedicatedVideoMemory() + 512_MiB;
+            return device.GetTotalDedicatedVideoMemory() - 768_MiB;
         }
         return 2_GiB; // Return minimum requirements
     }();
@@ -567,7 +567,7 @@ void TextureCacheRuntime::FreeDeferredStagingBuffer(StagingBufferMap& buffer) {
 
 u64 TextureCacheRuntime::GetDeviceMemoryUsage() const {
     if (device.CanReportMemoryUsage()) {
-        return device_access_memory - device.GetCurrentDedicatedVideoMemory();
+        return device.GetTotalDedicatedVideoMemory() - device.GetCurrentDedicatedVideoMemory();
     }
     return 2_GiB;
 }
