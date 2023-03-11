@@ -73,12 +73,18 @@ TextureCache<P>::TextureCache(Runtime& runtime_, Tegra::MaxwellDeviceMemoryManag
 template <class P>
 void TextureCache<P>::RunGarbageCollector() {
     bool high_priority_mode = false;
+    bool near_expect = false;
+    bool below_expect = false;
+    bool large_increase = false;
     bool aggressive_mode = false;
     u64 ticks_to_destroy = 0;
     size_t num_iterations = 0;
 
     const auto Configure = [&](bool allow_aggressive) {
         high_priority_mode = total_used_memory >= expected_memory;
+		near_expect = total_used_memory >= expected_memory - 32_MiB && !high_priority_mode;
+		below_expect = total_used_memory <= expected_memory - 512_MiB;
+		large_increase = high_priority_mode && total_used_memory >= expected_memory + 128_MiB;
         aggressive_mode = allow_aggressive && total_used_memory >= critical_memory;
         ticks_to_destroy = aggressive_mode ? 10ULL : high_priority_mode ? 25ULL : 50ULL;
         num_iterations = aggressive_mode ? 40 : (high_priority_mode ? 20 : 10);
@@ -130,6 +136,26 @@ void TextureCache<P>::RunGarbageCollector() {
         }
         return false;
     };
+
+    Configure(true);
+    if (high_priority_mode && !first_expect)
+        first_expect = true;
+
+    if (large_increase && !reach_expect)
+        reach_expect = true;
+
+    if ((!near_expect && !high_priority_mode) && reach_expect)
+        reach_expect = false;
+
+    if (!reach_expect && (near_expect || (high_priority_mode && !large_increase))) {
+        expected_memory = std::min(expected_memory + 64_MiB, static_cast<u64>(runtime.GetDeviceLocalMemory() - 1_GiB));
+        critical_memory = std::min(critical_memory + 64_MiB, static_cast<u64>(runtime.GetDeviceLocalMemory() - 256_MiB));
+        minimum_memory = std::min(minimum_memory + 64_MiB, static_cast<u64>(runtime.GetDeviceLocalMemory() / 2));
+    }
+
+    if (below_expect && first_expect) {
+        expected_memory = std::max(expected_memory - 4_MiB, minimum_memory);
+    }
 
     // Try to remove anything old enough and not high priority.
     Configure(false);
