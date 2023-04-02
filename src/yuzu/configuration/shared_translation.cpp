@@ -221,6 +221,8 @@ std::unique_ptr<TranslationMap> InitializeTranslations(QWidget* parent) {
               "unlocked."));
     INSERT(Settings, barrier_feedback_loops, tr("Barrier feedback loops"),
            tr("Improves rendering of transparency effects in specific games."));
+    INSERT(Settings, less_aggressive_gc, tr("Less aggressive gc (Hack)"),
+           tr("Enables this will adjust gc threshold. This option may improve performance on some games."));
 
     // Renderer (Debug)
 
