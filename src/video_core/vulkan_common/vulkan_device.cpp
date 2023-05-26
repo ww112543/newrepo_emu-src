@@ -1333,9 +1333,6 @@ void Device::CollectPhysicalMemoryInfo() {
         device_access_memory += mem_properties.memoryHeaps[element].size;
     }
     if (!is_integrated) {
-        const u64 reserve_memory = std::min<u64>(device_access_memory / 8, 1_GiB);
-        device_access_memory -= reserve_memory;
-
         if (Settings::values.vram_usage_mode.GetValue() != Settings::VramUsageMode::Aggressive) {
             // Account for resolution scaling in memory limits
             const size_t normal_memory = 6_GiB;
