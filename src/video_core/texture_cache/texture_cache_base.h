@@ -286,6 +286,8 @@ private:
 
     void OnGPUASRegister(size_t map_id) final override;
 
+    void CacheSizeAdjust();
+
     /// Runs the Garbage Collector.
     void RunGarbageCollector();
 
@@ -440,6 +442,8 @@ private:
     bool is_rescaling = false;
     bool first_expect = false;
     bool reach_expect = false;
+    bool exc_expect = false;
+    bool near_criticial = false;
     u64 total_used_memory = 0;
     u64 minimum_memory;
     u64 expected_memory;
