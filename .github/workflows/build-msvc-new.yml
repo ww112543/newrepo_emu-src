@@ -99,7 +99,7 @@ jobs:
         uses: lukka/run-vcpkg@v10
         with:
           vcpkgDirectory: '${{ github.workspace }}/vcpkg'
-          vcpkgGitCommitId: 'a7b6122f6b6504d16d96117336a0562693579933'
+          vcpkgGitCommitId: '656fcc6ab2b05c6d999b7eaca717027ac3738f71'
           runVcpkgInstall: true
           vcpkgJsonGlob: './vcpkg.json'
           appendedCacheKey: ${{ (inputs || github.event.inputs).runos }}-vcpkg-msvc
