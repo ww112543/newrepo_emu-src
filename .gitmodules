@@ -13,9 +13,6 @@
 [submodule "externals/dynarmic"]
     path = externals/dynarmic
     url = https://github.com/MerryMage/dynarmic.git
-[submodule "externals/libressl"]
-    path = externals/libressl
-    url = https://github.com/citra-emu/ext-libressl-portable.git
 [submodule "externals/libusb/libusb"]
 	path = externals/libusb/libusb
 	url = https://github.com/libusb/libusb.git
