@@ -9,7 +9,7 @@ jobs:
     name: Building yuzu Binaries
     runs-on: ubuntu-latest
     env:
-      BUILD_FLAVOR: "mainline"
+      BUILD_FLAVOR: "kpatch"
     steps:
       - name: actions/checkout
         uses: actions/checkout@v3

@@ -154,6 +154,12 @@ android {
             buildConfigField("Boolean", "PREMIUM", "true")
             applicationIdSuffix = ".ea"
         }
+
+        create("kpatch") {
+            dimension = "version"
+            buildConfigField("Boolean", "PREMIUM", "true")
+            applicationIdSuffix = ".kpatch"
+        }
     }
 
     externalNativeBuild {
