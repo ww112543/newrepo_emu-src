@@ -12,6 +12,7 @@
 #include "common/bit_util.h"
 #include "common/common_types.h"
 #include "common/literals.h"
+#include "common/settings.h"
 #include "video_core/renderer_vulkan/vk_scheduler.h"
 #include "video_core/renderer_vulkan/vk_staging_buffer_pool.h"
 #include "video_core/vulkan_common/vulkan_device.h"
@@ -40,14 +41,18 @@ size_t GetStreamBufferSize(const Device& device) {
             size = 128_MiB;
         }
     } else {
-        // Possible on many integrated and newer discrete cards
-        if (size >= 7168_MiB) {
-            size = 1_GiB;
-        } else if (size > 256_MiB) {
-            size = 512_MiB;
+        if (Settings::values.large_staging_buffer.GetValue()) {
+            // Possible on many integrated and newer discrete cards
+            if (size >= 7168_MiB) {
+                size = 1_GiB;
+            } else if (size > 256_MiB) {
+                size = 512_MiB;
+            } else {
+                // Well-supported default size used by most Vulkan PC games
+                size = size * 90 / 100;
+            }
         } else {
-            // Well-supported default size used by most Vulkan PC games
-            size = size * 90 / 100;
+            size = 128_MiB;
         }
     }
     return Common::AlignUp(size, MAX_ALIGNMENT);

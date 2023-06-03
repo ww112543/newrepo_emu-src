@@ -223,6 +223,8 @@ std::unique_ptr<TranslationMap> InitializeTranslations(QWidget* parent) {
            tr("Improves rendering of transparency effects in specific games."));
     INSERT(Settings, less_aggressive_gc, tr("Less aggressive gc (Hack)"),
            tr("Enables this will adjust gc threshold. This option may improve performance on some games."));
+    INSERT(Settings, large_staging_buffer, tr("Use larger staging buffer"),
+           tr("Enables this will use larger staging buffer. This option may improve performance on some games."));
 
     // Renderer (Debug)
 

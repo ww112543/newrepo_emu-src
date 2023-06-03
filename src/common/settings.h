@@ -427,6 +427,8 @@ struct Values {
                                                    Category::RendererAdvanced};
     SwitchableSetting<bool> less_aggressive_gc{linkage, false, "less_aggressive_gc",
                                                    Category::RendererAdvanced};
+    SwitchableSetting<bool> large_staging_buffer{linkage, true, "large_staging_buffer",
+                                                   Category::RendererAdvanced};
 
     Setting<bool> renderer_debug{linkage, false, "debug", Category::RendererDebug};
     Setting<bool> renderer_shader_feedback{linkage, false, "shader_feedback",
