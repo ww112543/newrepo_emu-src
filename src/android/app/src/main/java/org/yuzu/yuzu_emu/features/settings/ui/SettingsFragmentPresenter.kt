@@ -970,6 +970,9 @@ class SettingsFragmentPresenter(
             add(IntSetting.CPU_ACCURACY.key)
             add(BooleanSetting.CPU_DEBUG_MODE.key)
             add(SettingsItem.FASTMEM_COMBINED)
+
+            add(BooleanSetting.CPU_USE_FASTMEM.key)
+            add(BooleanSetting.CPU_USE_MEMFD.key)
         }
     }
 }

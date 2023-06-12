@@ -35,6 +35,7 @@
 #include "common/free_region_manager.h"
 #include "common/host_memory.h"
 #include "common/logging/log.h"
+#include "common/settings.h"
 
 namespace Common {
 
@@ -442,6 +443,13 @@ public:
             throw std::bad_alloc{};
         }
 
+#ifdef ANDROID
+        if (!Settings::values.cpu_use_fastmem.GetValue()) {
+            LOG_CRITICAL(HW_Memory, "Fastmem has been disabled by options");
+            throw std::bad_alloc{};
+        }
+#endif
+
         // Backing memory initialization
 #if defined(__FreeBSD__) && __FreeBSD__ < 13
         // XXX Drop after FreeBSD 12.* reaches EOL on 2024-06-30
@@ -455,6 +463,7 @@ public:
         }
 
         // Defined to extend the file with zeros
+        LOG_INFO(HW_Memory, "Resizing size");
         int ret = ftruncate(fd, backing_size);
         if (ret != 0) {
             LOG_CRITICAL(HW_Memory, "ftruncate failed with {}, are you out-of-memory?",

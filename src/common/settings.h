@@ -230,6 +230,8 @@ struct Values {
                                                       CpuAccuracy::Auto, CpuAccuracy::Paranoid,
                                                       "cpu_accuracy",    Category::Cpu};
     SwitchableSetting<bool> cpu_debug_mode{linkage, false, "cpu_debug_mode", Category::CpuDebug};
+    SwitchableSetting<bool> cpu_use_fastmem{linkage, true, "cpu_use_fastmem", Category::CpuDebug};
+    SwitchableSetting<bool> cpu_use_memfd{linkage, false, "cpu_use_memfd", Category::CpuDebug};
 
     Setting<bool> cpuopt_page_tables{linkage, true, "cpuopt_page_tables", Category::CpuDebug};
     Setting<bool> cpuopt_block_linking{linkage, true, "cpuopt_block_linking", Category::CpuDebug};

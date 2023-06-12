@@ -206,6 +206,11 @@
     <string name="frame_limit_slider_description">Specifies the percentage to limit emulation speed. 100% is the normal speed. Values higher or lower will increase or decrease the speed limit.</string>
     <string name="cpu_backend">CPU backend</string>
     <string name="cpu_accuracy">CPU accuracy</string>
+    <string name="cpu_use_fastmem">Use fastmem</string>
+    <string name="cpu_use_fastmem_description">Enable Host MMU Emulation (faster guest memory access).</string>
+    <string name="cpu_use_memfd">Use memfd</string>
+    <!-- Whether to use memfd for allocate memory -->
+    <string name="cpu_use_memfd_description">Use memfd rather than ashmem.</string>
     <string name="value_with_units">%1$s%2$s</string>
 
     <!-- System settings strings -->

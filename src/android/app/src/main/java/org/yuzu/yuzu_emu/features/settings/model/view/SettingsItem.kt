@@ -386,6 +386,21 @@ abstract class SettingsItem(
                 override fun reset() = setBoolean(defaultValue)
             }
             put(SwitchSetting(fastmem, R.string.fastmem))
+
+            put(
+                SwitchSetting(
+                    BooleanSetting.CPU_USE_FASTMEM,
+                    titleId = R.string.cpu_use_fastmem,
+                    descriptionId = R.string.cpu_use_fastmem_description
+                )
+            )
+            put(
+                SwitchSetting(
+                    BooleanSetting.CPU_USE_MEMFD,
+                    titleId = R.string.cpu_use_memfd,
+                    descriptionId = R.string.cpu_use_memfd_description
+                )
+            )
         }
     }
 }
