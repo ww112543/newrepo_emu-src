@@ -105,6 +105,7 @@ android {
 
             resValue("string", "app_name_suffixed", "yuzu")
             isMinifyEnabled = true
+            isShrinkResources = true
             isDebuggable = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android.txt"),

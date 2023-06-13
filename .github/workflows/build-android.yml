@@ -38,7 +38,7 @@ jobs:
           cd src/android
           vim ./gradlew -c "set ff=unix" -c ":x"
           chmod +x ./gradlew
-          ./gradlew "assemble${BUILD_FLAVOR}Release"
+          ./gradlew "assemble${BUILD_FLAVOR}Release" "bundle${BUILD_FLAVOR}Release"
       - name: Copy and sign artifacts
         env:
           ANDROID_KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_B64 }}
@@ -48,15 +48,32 @@ jobs:
           REV_NAME="yuzu-${GITDATE}-${GITREV}"
           mkdir ./artifacts
           cp src/android/app/build/outputs/apk/"${BUILD_FLAVOR}/release/app-${BUILD_FLAVOR}-release.apk" "artifacts/${REV_NAME}.apk"
+          cp src/android/app/build/outputs/bundle/"${BUILD_FLAVOR}Release"/"app-${BUILD_FLAVOR}-release.aab" "artifacts/${REV_NAME}.aab"
           echo "Signing apk..."
           base64 --decode <<< "${ANDROID_KEYSTORE_B64}" > ks.jks
           apksigner sign --v1-signing-enabled false --v2-signing-enabled false --ks ks.jks --ks-key-alias "${ANDROID_KEY_ALIAS}" --ks-pass env:ANDROID_KEYSTORE_PASS "artifacts/${REV_NAME}.apk"
+          echo "Downloading bundletool..."
+          curl -s https://api.github.com/repos/google/bundletool/releases/latest \
+          | grep "browser_download_url.*jar" \
+          | cut -d : -f 2,3 \
+          | tr -d \" \
+          | wget -qi -
+          echo "Extracting aab..."
+          mv bundletool*.jar bundletool.jar
+          java -jar bundletool.jar build-apks --bundle=./artifacts/${REV_NAME}.aab --output=./artifacts/${REV_NAME}.apks --ks=ks.jks --ks-pass=pass:${ANDROID_KEYSTORE_PASS} --ks-key-alias=${ANDROID_KEY_ALIAS} --mode=universal
       - name: Compress the Build Folder
         run: |
-          7z a -t7z "yuzu-ea-${{ github.ref_name }}-${GITREV}-android.7z" -m0=lzma2:d=64m -mx=9 -aoa -mfb=64 -md=32m -ms=on "./artifacts/*"
+          7z a -t7z "yuzu-ea-${{ github.ref_name }}-${GITREV}-android.7z" -m0=lzma2:d=64m -mx=9 -aoa -mfb=64 -md=32m -ms=on "./artifacts/*.apk" "./artifacts/*.idsig"
+          7z a -t7z "yuzu-ea-${{ github.ref_name }}-${GITREV}-android-apks.7z" -m0=lzma2:d=64m -mx=9 -aoa -mfb=64 -md=32m -ms=on "./artifacts/*.apks"
       - name: Making artifact
         uses: actions/upload-artifact@v3
         with:
           name: yuzu-ea-${{ env.GITREV }}-android
           path: yuzu-ea-${{ github.ref_name }}-${{ env.GITREV }}-android.7z
+          retention-days: 7
+      - name: Making artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: yuzu-ea-${{ env.GITREV }}-android-apks
+          path: yuzu-ea-${{ github.ref_name }}-${{ env.GITREV }}-android-apks.7z
           retention-days: 7
