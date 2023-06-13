@@ -9,6 +9,7 @@ jobs:
     name: Building yuzu Binaries
     runs-on: ubuntu-latest
     env:
+      BUILD_FLAVOR: "mainline"
     steps:
       - name: actions/checkout
         uses: actions/checkout@v3
@@ -17,6 +18,10 @@ jobs:
       - name: Query tag name
         uses: olegtarasov/get-tag@v2.1.2
         id: tagName
+      - name: Set environment variables
+        run: |
+          echo GITREV=$(git rev-parse --short HEAD) >> $GITHUB_ENV
+          echo GITDATE=$(date +%Y%m%d) >> $GITHUB_ENV
       - name: Setup Java JDK
         uses: actions/setup-java@v3
         with:
@@ -29,31 +34,29 @@ jobs:
           sudo apt-get install -y ccache apksigner glslang-dev glslang-tools
           git -C ./externals/vcpkg/ fetch --all --unshallow
       - name: Build
-        env:
-          BUILD_FLAVOR: "mainline"
         run: |
           cd src/android
+          vim ./gradlew -c "set ff=unix" -c ":x"
           chmod +x ./gradlew
-          ./gradlew "assemble${BUILD_FLAVOR}Release" "bundle${BUILD_FLAVOR}Release"
+          ./gradlew "assemble${BUILD_FLAVOR}Release"
       - name: Copy and sign artifacts
         env:
-          BUILD_FLAVOR: "mainline"
           ANDROID_KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_B64 }}
           ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           ANDROID_KEYSTORE_PASS: ${{ secrets.ANDROID_KEYSTORE_PASS }}
         run: |
           REV_NAME="yuzu-${GITDATE}-${GITREV}"
+          mkdir ./artifacts
           cp src/android/app/build/outputs/apk/"${BUILD_FLAVOR}/release/app-${BUILD_FLAVOR}-release.apk" "artifacts/${REV_NAME}.apk"
-          cp src/android/app/build/outputs/bundle/"${BUILD_FLAVOR}Release"/"app-${BUILD_FLAVOR}-release.aab" "artifacts/${REV_NAME}.aab"
           echo "Signing apk..."
           base64 --decode <<< "${ANDROID_KEYSTORE_B64}" > ks.jks
-          apksigner sign --ks ks.jks --ks-key-alias "${ANDROID_KEY_ALIAS}" --ks-pass env:ANDROID_KEYSTORE_PASS "artifacts/${REV_NAME}.apk"
+          apksigner sign --v1-signing-enabled false --v2-signing-enabled false --ks ks.jks --ks-key-alias "${ANDROID_KEY_ALIAS}" --ks-pass env:ANDROID_KEYSTORE_PASS "artifacts/${REV_NAME}.apk"
       - name: Compress the Build Folder
         run: |
           7z a -t7z "yuzu-ea-${{ github.ref_name }}-${GITREV}-android.7z" -m0=lzma2:d=64m -mx=9 -aoa -mfb=64 -md=32m -ms=on "./artifacts/*"
       - name: Making artifact
         uses: actions/upload-artifact@v3
         with:
-          name: yuzu-ea-${GITREV}-android
-          path: yuzu-ea-${{ github.ref_name }}-${GITREV}-android.7z
+          name: yuzu-ea-${{ env.GITREV }}-android
+          path: yuzu-ea-${{ github.ref_name }}-${{ env.GITREV }}-android.7z
           retention-days: 7

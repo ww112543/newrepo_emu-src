@@ -63,10 +63,6 @@ jobs:
   build:
     name: Building yuzu Binaries with MSVC
     runs-on: ${{ (inputs || github.event.inputs).runos }}
-    env:
-      CONAN_USER_HOME: "${{ github.workspace }}/conan/"
-      CONAN_USER_HOME_SHORT: "${{ github.workspace }}/conan/short"
-#     VCPKG_TOOLCHAIN_FILE: "${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake"
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - name: actions/checkout
@@ -90,8 +86,7 @@ jobs:
 
       #Set short SHA
       - name: Set short SHA outputs
-        id: vars
-        run: echo sha_short=$(git rev-parse --short HEAD) >> $GITHUB_OUTPUT && echo Completed
+        run: echo GITREV=$(git rev-parse --short HEAD) >> $env:GITHUB_ENV
         shell: pwsh
 
       #Setup vcpkg
@@ -100,7 +95,7 @@ jobs:
         with:
           vcpkgDirectory: '${{ github.workspace }}/vcpkg'
           vcpkgGitCommitId: '656fcc6ab2b05c6d999b7eaca717027ac3738f71'
-          runVcpkgInstall: true
+          runVcpkgInstall: false
           vcpkgJsonGlob: './vcpkg.json'
           appendedCacheKey: ${{ (inputs || github.event.inputs).runos }}-vcpkg-msvc
 
@@ -187,7 +182,7 @@ jobs:
       #Preparing Build
       - name: Before Build
         env:
-          build-arg: -DCMAKE_TOOLCHAIN_FILE=${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake -DCMAKE_POLICY_DEFAULT_CMP0069=NEW -DYUZU_ENABLE_LTO=ON -DUSE_EXTERNAL_VCPKG=ON -DYUZU_USE_BUNDLED_VCPKG=OFF -DYUZU_USE_BUNDLED_QT=1 -DYUZU_USE_BUNDLED_SDL2=1 -DYUZU_USE_QT_WEB_ENGINE=ON -DYUZU_TESTS=OFF -DUSE_DISCORD_PRESENCE=ON -DTITLE_BAR_FORMAT_IDLE="yuzu Early Access ${{ github.ref_name }}-${{ steps.vars.outputs.sha_short }}" -DTITLE_BAR_FORMAT_RUNNING="yuzu Early Access ${{ github.ref_name }}-${{ steps.vars.outputs.sha_short }} | {3}" -DENABLE_COMPATIBILITY_LIST_DOWNLOAD=OFF -DENABLE_QT_TRANSLATION=ON -DCMAKE_BUILD_TYPE=Release
+          build-arg: -DCMAKE_TOOLCHAIN_FILE=${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake -DCMAKE_POLICY_DEFAULT_CMP0069=NEW -DYUZU_ENABLE_LTO=ON -DUSE_EXTERNAL_VCPKG=ON -DYUZU_USE_BUNDLED_VCPKG=OFF -DYUZU_USE_BUNDLED_QT=1 -DYUZU_USE_BUNDLED_SDL2=1 -DYUZU_USE_QT_WEB_ENGINE=ON -DYUZU_TESTS=OFF -DUSE_DISCORD_PRESENCE=ON -DTITLE_BAR_FORMAT_IDLE="yuzu Early Access ${{ github.ref_name }}-${{ env.GITREV }}" -DTITLE_BAR_FORMAT_RUNNING="yuzu Early Access ${{ github.ref_name }}-${{ env.GITREV }} | {3}" -DENABLE_COMPATIBILITY_LIST_DOWNLOAD=OFF -DENABLE_QT_TRANSLATION=ON -DCMAKE_BUILD_TYPE=Release
         run: |
           cd build && echo Build
           echo Build
@@ -201,22 +196,22 @@ jobs:
 
       - name: After Build
         run: |
-          mkdir ${{ github.workspace }}\build\bin\yuzu-build\yuzu-${{ steps.vars.outputs.sha_short }}-msvc
-          mv ${{ github.workspace }}\build\bin\Release\* ${{ github.workspace }}\build\bin\yuzu-build\yuzu-${{ steps.vars.outputs.sha_short }}-msvc
-          del ${{ github.workspace }}\build\bin\yuzu-build\yuzu-${{ steps.vars.outputs.sha_short }}-msvc\*.pdb
+          mkdir ${{ github.workspace }}\build\bin\yuzu-build\yuzu-${{ env.GITREV }}-msvc
+          mv ${{ github.workspace }}\build\bin\Release\* ${{ github.workspace }}\build\bin\yuzu-build\yuzu-${{ env.GITREV }}-msvc
+          del ${{ github.workspace }}\build\bin\yuzu-build\yuzu-${{ env.GITREV }}-msvc\*.pdb
         shell: pwsh
 
       - name: Compress the Build Folder
         run: |
-          7z a -t7z "yuzu-ea-${{ github.ref_name }}-${{ steps.vars.outputs.sha_short }}-msvc${{ env.simd-suffix }}.7z" -m0=lzma2:d=64m -mx=9 -aoa -mfb=64 -md=32m -ms=on "${{ github.workspace }}\build\bin\yuzu-build"
+          7z a -t7z "yuzu-ea-${{ github.ref_name }}-${{ env.GITREV }}-msvc${{ env.simd-suffix }}.7z" -m0=lzma2:d=64m -mx=9 -aoa -mfb=64 -md=32m -ms=on "${{ github.workspace }}\build\bin\yuzu-build"
         shell: pwsh
           
       #Upload Artifacts
       - name: Making artifact
         uses: actions/upload-artifact@v3
         with:
-          name: yuzu-ea-${{ steps.vars.outputs.sha_short }}-msvc${{ env.simd-suffix }}
-          path: yuzu-ea-${{ github.ref_name }}-${{ steps.vars.outputs.sha_short }}-msvc${{ env.simd-suffix }}.7z
+          name: yuzu-ea-${{ env.GITREV }}-msvc${{ env.simd-suffix }}
+          path: yuzu-ea-${{ github.ref_name }}-${{ env.GITREV }}-msvc${{ env.simd-suffix }}.7z
           retention-days: 7
 
 #     #Publishing to Release
