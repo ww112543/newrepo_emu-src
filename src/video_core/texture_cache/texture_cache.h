@@ -149,6 +149,9 @@ void TextureCache<P>::TickFrame() {
         total_used_memory = runtime.GetDeviceMemoryUsage();
     }
     if (total_used_memory > minimum_memory) {
+        if (frame_tick % 60 == 0) {
+            LOG_INFO(HW_GPU, "Device used memory: {}", total_used_memory);
+        }
         RunGarbageCollector();
     }
     sentenced_images.Tick();
