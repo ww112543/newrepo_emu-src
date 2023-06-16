@@ -93,8 +93,12 @@ void TextureCache<P>::CacheSizeAdjust() {
         LOG_INFO(HW_GPU, "exc_expect set to false");
     }
 
-    if (!exc_expect && large_increase && !reach_expect)
-        reach_expect = true;
+    if (!exc_expect && large_increase && !reach_expect) {
+        if (total_used_memory < 3_GiB + 512_MiB)
+            return;
+        else
+            reach_expect = true;
+    }
 
     if (reach_expect && ((total_used_memory < expected_memory - 8_MiB && !high_priority_mode) || (!aggressive_mode && near_criticial)))
         reach_expect = false;
