@@ -183,8 +183,7 @@ jobs:
         env:
           build-arg: -DCMAKE_TOOLCHAIN_FILE=${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake -DCMAKE_POLICY_DEFAULT_CMP0069=NEW -DYUZU_ENABLE_LTO=ON -DUSE_EXTERNAL_VCPKG=ON -DYUZU_USE_BUNDLED_VCPKG=OFF -DYUZU_USE_BUNDLED_QT=1 -DYUZU_USE_BUNDLED_SDL2=1 -DYUZU_USE_QT_WEB_ENGINE=ON -DYUZU_TESTS=OFF -DUSE_DISCORD_PRESENCE=ON -DTITLE_BAR_FORMAT_IDLE="yuzu Early Access ${{ github.ref_name }}-${{ env.GITREV }}" -DTITLE_BAR_FORMAT_RUNNING="yuzu Early Access ${{ github.ref_name }}-${{ env.GITREV }} | {3}" -DENABLE_COMPATIBILITY_LIST_DOWNLOAD=OFF -DENABLE_QT_TRANSLATION=ON -DCMAKE_BUILD_TYPE=Release
         run: |
-          cd build && echo Build
-          echo Build
+          cd build
           cmake --version
           cmake .. ${{ env.build-gen }} ${{ env.build-arg }} ${{ env.build-arg-ext }}
         shell: pwsh

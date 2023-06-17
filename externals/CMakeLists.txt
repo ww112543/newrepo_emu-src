@@ -321,3 +321,7 @@ if (ARCHITECTURE_arm64 AND NOT TARGET sse2neon)
     target_include_directories(sse2neon INTERFACE sse2neon)
 endif()
 
+if (YUZU_ENABLE_LTO)
+  set_property(TARGET dynarmic PROPERTY INTERPROCEDURAL_OPTIMIZATION TRUE)
+  set_property(TARGET xbyak PROPERTY INTERPROCEDURAL_OPTIMIZATION TRUE)
+endif()

@@ -95,7 +95,7 @@ void TextureCache<P>::CacheSizeAdjust() {
 
     if (!exc_expect && large_increase && !reach_expect) {
         if (total_used_memory < 3_GiB + 512_MiB)
-            return;
+            large_increase = false;
         else
             reach_expect = true;
     }

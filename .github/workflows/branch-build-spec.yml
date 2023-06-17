@@ -40,7 +40,7 @@ jobs:
     with:
       runos: windows-latest
       simd: avx2
-      GL: true
+      GL: false
       contract-fp: true
 #     cache: false
 #     suffix: '-avx2'

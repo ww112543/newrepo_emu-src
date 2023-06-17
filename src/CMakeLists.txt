@@ -183,6 +183,10 @@ else()
     endif()
 endif()
 
+if (YUZU_ENABLE_LTO)
+  set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
+endif()
+
 add_subdirectory(common)
 add_subdirectory(core)
 add_subdirectory(audio_core)
