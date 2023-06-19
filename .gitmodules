@@ -52,3 +52,9 @@
 [submodule "externals/libadrenotools"]
 	path = externals/libadrenotools
 	url = https://github.com/bylaws/libadrenotools
+[submodule "externals/nx_tzdb/tzdb_to_nx"]
+	path = externals/nx_tzdb/tzdb_to_nx
+	url = https://github.com/lat9nq/tzdb_to_nx.git
+[submodule "externals/vma/vma"]
+	path = externals/vma/vma
+	url = https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator

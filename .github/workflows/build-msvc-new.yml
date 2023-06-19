@@ -91,13 +91,12 @@ jobs:
 
       #Setup vcpkg
       - name: Setup vcpkg
-        uses: lukka/run-vcpkg@v10
+        uses: lukka/run-vcpkg@v11
         with:
           vcpkgDirectory: '${{ github.workspace }}/vcpkg'
-          vcpkgGitCommitId: 'a487471068f4cb1cbb4eeb340763cdcc0a75fd68'
+          vcpkgGitCommitId: 'cbf56573a987527b39272e88cbdd11389b78c6e4'
           runVcpkgInstall: false
           vcpkgJsonGlob: './vcpkg.json'
-          appendedCacheKey: ${{ (inputs || github.event.inputs).runos }}-vcpkg-msvc
 
       #Install Vulkan SDK
       - name: Prepare Vulkan SDK
