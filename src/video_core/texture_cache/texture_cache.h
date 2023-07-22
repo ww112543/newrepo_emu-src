@@ -72,12 +72,14 @@ TextureCache<P>::TextureCache(Runtime& runtime_, Tegra::MaxwellDeviceMemoryManag
 
 template <class P>
 void TextureCache<P>::CacheSizeAdjust() {
-    bool less_aggressive_gc = Settings::values.less_aggressive_gc.GetValue();
+    const bool less_aggressive_gc = Settings::values.less_aggressive_gc.GetValue();
     bool high_priority_mode = total_used_memory >= expected_memory;
     bool aggressive_mode = total_used_memory >= critical_memory;
     bool near_expect = total_used_memory >= expected_memory - 64_MiB && !high_priority_mode;
     bool large_increase = high_priority_mode && total_used_memory >= expected_memory + 256_MiB;
     const u64 device_memory = static_cast<u64>(runtime.GetDeviceLocalMemory());
+    const u64 prev_expect = expected_memory;
+    const u64 prev_critical = critical_memory;
 
     if (less_aggressive_gc && !large_increase && expected_memory >= expected_memory + 222_MiB && !exc_expect) {
         exc_expect = true;
@@ -123,8 +125,10 @@ void TextureCache<P>::CacheSizeAdjust() {
             critical_memory = std::min(critical_memory + 64_MiB, static_cast<u64>(device_memory - 256_MiB));
             minimum_memory = std::min(minimum_memory + 64_MiB, static_cast<u64>(device_memory / 2));
         }
-        LOG_INFO(HW_GPU, "Texture cache device memory limits: min {} expected {} critical {} used {}",
-         minimum_memory, expected_memory, critical_memory, total_used_memory);
+        if (expected_memory != prev_expect || critical_memory != prev_critical){
+            LOG_INFO(HW_GPU, "Texture cache device memory limits: min {} expected {} critical {} used {}",
+             minimum_memory, expected_memory, critical_memory, total_used_memory);
+        }
     }
     /*
     else if (aggressive_mode && large_increase && less_aggressive_gc) {
@@ -147,7 +151,7 @@ void TextureCache<P>::RunGarbageCollector() {
     bool aggressive_mode = false;
     bool near_min = false;
     bool below_expect = false;
-    bool less_aggressive_gc = Settings::values.less_aggressive_gc.GetValue();
+    const bool less_aggressive_gc = Settings::values.less_aggressive_gc.GetValue();
     const u64 device_memory = static_cast<u64>(runtime.GetDeviceLocalMemory());
     u64 ticks_to_destroy = 0;
     size_t num_iterations = 0;
