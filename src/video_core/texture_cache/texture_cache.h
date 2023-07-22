@@ -81,7 +81,7 @@ void TextureCache<P>::CacheSizeAdjust() {
     const u64 prev_expect = expected_memory;
     const u64 prev_critical = critical_memory;
 
-    if (less_aggressive_gc && !large_increase && expected_memory >= expected_memory + 222_MiB && !exc_expect) {
+    if (less_aggressive_gc && !large_increase && total_used_memory >= expected_memory + 222_MiB && !exc_expect) {
         exc_expect = true;
         LOG_INFO(HW_GPU, "exc_expect set to true");
     }
@@ -90,16 +90,20 @@ void TextureCache<P>::CacheSizeAdjust() {
         reach_expect = false;
         LOG_INFO(HW_GPU, "exc_expect set to true");
     }
-    else if (exc_expect && expected_memory < expected_memory) {
+    else if (exc_expect && total_used_memory < expected_memory) {
         exc_expect = false;
         LOG_INFO(HW_GPU, "exc_expect set to false");
     }
 
     if (!exc_expect && large_increase && !reach_expect) {
-        if (total_used_memory < 3_GiB + 512_MiB)
+        if (total_used_memory < 3_GiB + 768_MiB) {
             large_increase = false;
-        else
+        }
+        else {
+            LOG_INFO(HW_GPU, "large_increase triggered: expected {} used {} diff {}",
+             expected_memory, total_used_memory, total_used_memory - expected_memory);
             reach_expect = true;
+        }
     }
 
     if (reach_expect && ((total_used_memory < expected_memory - 8_MiB && !high_priority_mode) || (!aggressive_mode && near_criticial)))
@@ -254,6 +258,7 @@ void TextureCache<P>::RunGarbageCollector() {
 template <class P>
 void TextureCache<P>::TickFrame() {
     // If we can obtain the memory info, use it instead of the estimate.
+    const u64 device_memory = runtime.GetDeviceLocalMemory();
     if (runtime.CanReportMemoryUsage()) {
         total_used_memory = runtime.GetDeviceMemoryUsage();
     }
@@ -263,6 +268,11 @@ void TextureCache<P>::TickFrame() {
         }
         RunGarbageCollector();
     }
+    else if (first_expect && frame_tick % 120 == 0) {
+        minimum_memory = std::max(minimum_memory - 256_MiB,
+        static_cast<u64>((device_memory - std::min(device_memory, 4_GiB)) / 2));
+    }
+
     sentenced_images.Tick();
     sentenced_framebuffers.Tick();
     sentenced_image_view.Tick();

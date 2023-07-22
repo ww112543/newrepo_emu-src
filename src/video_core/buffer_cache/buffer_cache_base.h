@@ -341,6 +341,8 @@ private:
                ((device_addr + size) & ~Core::DEVICE_PAGEMASK);
     }
 
+    void CacheSizeAdjust();
+
     void RunGarbageCollector();
 
     void BindHostIndexBuffer();
@@ -475,6 +477,10 @@ private:
         using TickType = u64;
     };
     Common::LeastRecentlyUsedCache<LRUItemParams> lru_cache;
+    bool first_expect = false;
+    bool reach_expect = false;
+    bool exc_expect = false;
+    bool near_criticial = false;
     u64 frame_tick = 0;
     u64 total_used_memory = 0;
     u64 minimum_memory = 0;

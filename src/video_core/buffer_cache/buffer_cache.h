@@ -31,26 +31,84 @@ BufferCache<P>::BufferCache(Tegra::MaxwellDeviceMemoryManager& device_memory_, R
     }
 
     const s64 device_local_memory = static_cast<s64>(runtime.GetDeviceLocalMemory());
-    s64 min_spacing_expected = device_local_memory - 512_MiB;
-    s64 min_spacing_critical = device_local_memory - 64_MiB;
-    if (Settings::values.less_aggressive_gc.GetValue()) {
-        const u64 device_mem_per = device_local_memory / 100;
-        min_spacing_expected = device_mem_per * 75;
-        min_spacing_critical = device_mem_per * 85;
-    }
-    //const s64 mem_threshold = std::min(device_local_memory, TARGET_THRESHOLD);
-    //const s64 min_vacancy_expected = (6 * mem_threshold) / 10;
-    //const s64 min_vacancy_critical = (2 * mem_threshold) / 10;
+    const s64 min_spacing_expected = device_local_memory - 1_GiB;
+    const s64 min_spacing_critical = device_local_memory - 512_MiB;
+    const s64 mem_threshold = std::min(device_local_memory, TARGET_THRESHOLD);
+    const s64 min_vacancy_expected = (5 * mem_threshold) / 10;
+    const s64 min_vacancy_critical = (2 * mem_threshold) / 10;
     minimum_memory = static_cast<u64>(
-        std::max(min_spacing_expected,
+        std::max(std::min(device_local_memory - min_vacancy_expected, min_spacing_expected),
                  DEFAULT_EXPECTED_MEMORY));
     critical_memory = static_cast<u64>(
-        std::max(min_spacing_critical,
+        std::max(std::min(device_local_memory - min_vacancy_critical, min_spacing_critical),
                  DEFAULT_CRITICAL_MEMORY));
 }
 
 template <class P>
 BufferCache<P>::~BufferCache() = default;
+
+template <class P>
+void BufferCache<P>::CacheSizeAdjust() {
+    const bool less_aggressive_gc = Settings::values.less_aggressive_gc.GetValue();
+    bool high_priority_mode = total_used_memory >= minimum_memory;
+    bool aggressive_mode = total_used_memory >= critical_memory;
+    bool near_expect = total_used_memory >= minimum_memory - 64_MiB && !high_priority_mode;
+    bool large_increase = high_priority_mode && total_used_memory >= minimum_memory + 256_MiB;
+    const u64 device_memory = static_cast<u64>(runtime.GetDeviceLocalMemory());
+    const u64 prev_expect = minimum_memory;
+    const u64 prev_critical = critical_memory;
+
+    if (less_aggressive_gc && !large_increase && total_used_memory >= minimum_memory + 222_MiB && !exc_expect) {
+        exc_expect = true;
+        LOG_INFO(HW_GPU, "exc_expect set to true");
+    }
+    else if (reach_expect && !exc_expect && (total_used_memory >= critical_memory - 64_MiB && !aggressive_mode)) {
+        exc_expect = true;
+        reach_expect = false;
+        LOG_INFO(HW_GPU, "exc_expect set to true");
+    }
+
+    if (!exc_expect && large_increase && !reach_expect) {
+        if (total_used_memory < 3_GiB + 768_MiB)
+            large_increase = false;
+        else
+            reach_expect = true;
+    }
+
+    if (reach_expect && (!aggressive_mode && near_criticial))
+        reach_expect = false;
+
+    if (less_aggressive_gc && !near_criticial && !reach_expect && (total_used_memory >= critical_memory - 64_MiB && !aggressive_mode)) {
+        near_criticial = true;
+        LOG_INFO(HW_GPU, "near_criticial set to true");
+    }
+    else if (near_criticial && total_used_memory < critical_memory - 64_MiB) {
+        near_criticial = false;
+        LOG_INFO(HW_GPU, "near_criticial set to false");
+    }
+
+    if (!reach_expect && (near_expect || (high_priority_mode && !large_increase) || exc_expect)) {
+        if (less_aggressive_gc) {
+            minimum_memory = std::min(std::max(minimum_memory + 64_MiB, total_used_memory + 8_MiB), static_cast<u64>(device_memory * 3 / 4));
+            critical_memory = std::min(critical_memory + 64_MiB, static_cast<u64>(device_memory * 17 / 20));
+        }
+        else {
+            minimum_memory = std::min(minimum_memory + 64_MiB, static_cast<u64>(device_memory - 1_GiB));
+            critical_memory = std::min(critical_memory + 64_MiB, static_cast<u64>(device_memory - 256_MiB));
+        }
+        if (minimum_memory != prev_expect || critical_memory != prev_critical){
+            LOG_INFO(HW_GPU, "Buffer cache device memory limits: expected {} critical {} used {}",
+             minimum_memory, critical_memory, total_used_memory);
+        }
+    }
+
+    if (!reach_expect && aggressive_mode && near_criticial){
+        critical_memory = critical_memory - 256_MiB;
+        reach_expect = true;
+        LOG_INFO(HW_GPU, "Buffer cache device memory limits: expected {} critical {} used {}",
+         minimum_memory, critical_memory, total_used_memory);
+    }
+}
 
 template <class P>
 void BufferCache<P>::RunGarbageCollector() {
@@ -96,11 +154,29 @@ void BufferCache<P>::TickFrame() {
     channel_state->uniform_buffer_skip_cache_size = skip_preferred ? DEFAULT_SKIP_CACHE_SIZE : 0;
 
     // If we can obtain the memory info, use it instead of the estimate.
+    const u64 device_memory = runtime.GetDeviceLocalMemory();
     if (runtime.CanReportMemoryUsage()) {
         total_used_memory = runtime.GetDeviceMemoryUsage();
     }
     if (total_used_memory >= minimum_memory) {
-        RunGarbageCollector();
+        CacheSizeAdjust();
+        if (total_used_memory >= minimum_memory) {
+            if (!first_expect) {
+                first_expect = true;
+            }
+            RunGarbageCollector();
+        }
+    }
+    else if (frame_tick % 60 == 0) {
+        if (exc_expect) {
+            exc_expect = false;
+        }
+        if (total_used_memory <= minimum_memory - 8_MiB && reach_expect) {
+            reach_expect = false;
+        }
+        if (total_used_memory <= minimum_memory - 256_MiB && first_expect) {
+            minimum_memory = std::max(minimum_memory - 4_MiB, static_cast<u64>(device_memory - (6 * 4_GiB / 10) + 128_MiB));
+        }
     }
     ++frame_tick;
     delayed_destruction_ring.Tick();
