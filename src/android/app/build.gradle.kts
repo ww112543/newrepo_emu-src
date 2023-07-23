@@ -185,6 +185,17 @@ android {
                     "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON"
                 )
 
+                cFlags(
+                    "-march=armv8.6a",
+                    "-pipe",
+                    "-funsafe-math-optimizations"
+                )
+                cppFlags(
+                    "-march=armv8.6a",
+                    "-pipe",
+                    "-funsafe-math-optimizations"
+                )
+
                 abiFilters("arm64-v8a", "x86_64")
             }
         }
