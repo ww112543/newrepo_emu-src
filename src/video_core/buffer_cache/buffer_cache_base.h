@@ -170,8 +170,8 @@ class BufferCache : public VideoCommon::ChannelSetupCaches<BufferCacheChannelInf
     static constexpr bool SEPARATE_IMAGE_BUFFERS_BINDINGS = P::SEPARATE_IMAGE_BUFFER_BINDINGS;
     static constexpr bool USE_MEMORY_MAPS_FOR_UPLOADS = P::USE_MEMORY_MAPS_FOR_UPLOADS;
 
-    static constexpr s64 DEFAULT_EXPECTED_MEMORY = 512_MiB;
-    static constexpr s64 DEFAULT_CRITICAL_MEMORY = 1_GiB;
+    static constexpr s64 DEFAULT_EXPECTED_MEMORY = 896_MiB;
+    static constexpr s64 DEFAULT_CRITICAL_MEMORY = 1_GiB + 425_MiB;
     static constexpr s64 TARGET_THRESHOLD = 4_GiB;
 
     // Debug Flags.
