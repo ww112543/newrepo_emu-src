@@ -159,6 +159,7 @@ void TextureCache<P>::RunGarbageCollector() {
     const u64 device_memory = static_cast<u64>(runtime.GetDeviceLocalMemory());
     u64 ticks_to_destroy = 0;
     size_t num_iterations = 0;
+    size_t max_num_iterations = 20;
 
     const auto Configure = [&](bool allow_aggressive) {
         high_priority_mode = total_used_memory >= expected_memory;
@@ -168,9 +169,9 @@ void TextureCache<P>::RunGarbageCollector() {
         ticks_to_destroy = aggressive_mode ? 10ULL : high_priority_mode ? 25ULL : 50ULL;
         num_iterations = aggressive_mode ? 40 : (high_priority_mode ? 20 : 10);
     };
-    const auto Cleanup = [this, &num_iterations, &high_priority_mode,
+    const auto Cleanup = [this, &num_iterations, &max_num_iterations, &high_priority_mode,
                           &aggressive_mode](ImageId image_id) {
-        if (num_iterations == 0) {
+        if (num_iterations == 0 || max_num_iterations == 0) {
             return true;
         }
         --num_iterations;
@@ -181,11 +182,15 @@ void TextureCache<P>::RunGarbageCollector() {
             return false;
         }
         if (!aggressive_mode && True(image.flags & ImageFlagBits::CostlyLoad)) {
+            ++num_iterations;
+            --max_num_iterations;
             return false;
         }
         const bool must_download =
             image.IsSafeDownload() && False(image.flags & ImageFlagBits::BadOverlap);
         if (!high_priority_mode && must_download) {
+            ++num_iterations;
+            --max_num_iterations;
             return false;
         }
         if (must_download) {
