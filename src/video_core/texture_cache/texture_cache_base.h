@@ -108,7 +108,7 @@ class TextureCache : public VideoCommon::ChannelSetupCaches<TextureCacheChannelI
     static constexpr size_t UNSET_CHANNEL{std::numeric_limits<size_t>::max()};
 
     static constexpr s64 TARGET_THRESHOLD = 4_GiB;
-    static constexpr s64 DEFAULT_EXPECTED_MEMORY = 896_MiB;
+    static constexpr s64 DEFAULT_EXPECTED_MEMORY = 512_MiB;
     static constexpr s64 DEFAULT_CRITICAL_MEMORY = 1_GiB + 425_MiB;
     static constexpr size_t GC_EMERGENCY_COUNTS = 2;
 
