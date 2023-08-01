@@ -444,6 +444,7 @@ private:
     bool reach_expect = false;
     bool exc_expect = false;
     bool near_criticial = false;
+    bool old_timer = false;
     u64 total_used_memory = 0;
     u64 minimum_memory;
     u64 expected_memory;

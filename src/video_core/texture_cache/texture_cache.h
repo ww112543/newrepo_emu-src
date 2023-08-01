@@ -160,6 +160,8 @@ void TextureCache<P>::RunGarbageCollector() {
     u64 ticks_to_destroy = 0;
     size_t num_iterations = 0;
     size_t max_num_iterations = 20;
+    size_t num_iterations_old = 2;
+    const u64 ticks_to_destroy_old = 1800ULL;
 
     const auto Configure = [&](bool allow_aggressive) {
         high_priority_mode = total_used_memory >= expected_memory;
@@ -220,6 +222,40 @@ void TextureCache<P>::RunGarbageCollector() {
         }
         return false;
     };
+    const auto clean_up_old = [this, &num_iterations_old](ImageId image_id) {
+        if (num_iterations_old == 0) {
+            return true;
+        }
+        --num_iterations_old;
+        auto& image = slot_images[image_id];
+        if (True(image.flags & ImageFlagBits::IsDecoding)) {
+            // This image is still being decoded, deleting it will invalidate the slot
+            // used by the async decoder thread.
+            return false;
+        }
+        if (True(image.flags & ImageFlagBits::CostlyLoad)) {
+            return false;
+        }
+        const bool must_download =
+            image.IsSafeDownload() && False(image.flags & ImageFlagBits::BadOverlap);
+        if (!must_download) {
+            return false;
+        }
+        if (must_download) {
+            auto map = runtime.DownloadStagingBuffer(image.unswizzled_size_bytes);
+            const auto copies = FullDownloadCopies(image.info);
+            image.DownloadMemory(map, copies);
+            runtime.Finish();
+            SwizzleImage(*gpu_memory, image.gpu_addr, image.info, copies, map.mapped_span,
+                         swizzle_data_buffer);
+        }
+        if (True(image.flags & ImageFlagBits::Tracked)) {
+            UntrackImage(image, image_id);
+        }
+        UnregisterImage(image_id);
+        DeleteImage(image_id, image.scale_tick > frame_tick + 5);
+        return false;
+    };
 
     Configure(true);
     if (high_priority_mode){
@@ -253,6 +289,10 @@ void TextureCache<P>::RunGarbageCollector() {
     Configure(false);
     lru_cache.ForEachItemBelow(frame_tick - ticks_to_destroy, Cleanup);
 
+    if (!high_priority_mode && old_timer && frame_tick % 35 == 0) {
+        lru_cache.ForEachItemBelow(frame_tick - ticks_to_destroy_old, clean_up_old);
+    }
+
     // If pressure is still too high, prune aggressively.
     if (total_used_memory >= critical_memory) {
         Configure(true);
@@ -262,6 +302,9 @@ void TextureCache<P>::RunGarbageCollector() {
 
 template <class P>
 void TextureCache<P>::TickFrame() {
+    if (frame_tick % 180 == 0) {
+        old_timer = !old_timer;
+    }
     // If we can obtain the memory info, use it instead of the estimate.
     const u64 device_memory = runtime.GetDeviceLocalMemory();
     if (runtime.CanReportMemoryUsage()) {
