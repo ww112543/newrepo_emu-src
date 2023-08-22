@@ -72,7 +72,6 @@ TextureCache<P>::TextureCache(Runtime& runtime_, Tegra::MaxwellDeviceMemoryManag
 
 template <class P>
 void TextureCache<P>::CacheSizeAdjust() {
-    const bool less_aggressive_gc = Settings::values.less_aggressive_gc.GetValue();
     bool high_priority_mode = total_used_memory >= expected_memory;
     bool aggressive_mode = total_used_memory >= critical_memory;
     bool near_expect = total_used_memory >= expected_memory - 64_MiB && !high_priority_mode;
@@ -81,7 +80,7 @@ void TextureCache<P>::CacheSizeAdjust() {
     const u64 prev_expect = expected_memory;
     const u64 prev_critical = critical_memory;
 
-    if (less_aggressive_gc && !large_increase && total_used_memory >= expected_memory + 222_MiB && !exc_expect) {
+    if (!large_increase && total_used_memory >= expected_memory + 222_MiB && !exc_expect) {
         exc_expect = true;
         LOG_INFO(HW_GPU, "exc_expect set to true");
     }
@@ -109,7 +108,7 @@ void TextureCache<P>::CacheSizeAdjust() {
     if (reach_expect && ((total_used_memory < expected_memory - 8_MiB && !high_priority_mode) || (!aggressive_mode && near_criticial)))
         reach_expect = false;
 
-    if (less_aggressive_gc && !near_criticial && !reach_expect && (total_used_memory >= critical_memory - 64_MiB && !aggressive_mode)) {
+    if (!near_criticial && !reach_expect && (total_used_memory >= critical_memory - 64_MiB && !aggressive_mode)) {
         near_criticial = true;
         LOG_INFO(HW_GPU, "near_criticial set to true");
     }
@@ -119,16 +118,9 @@ void TextureCache<P>::CacheSizeAdjust() {
     }
 
     if (!reach_expect && (near_expect || (high_priority_mode && !large_increase) || exc_expect)) {
-        if (less_aggressive_gc) {
-            expected_memory = std::min(std::max(expected_memory + 64_MiB, total_used_memory + 8_MiB), static_cast<u64>(device_memory * 3 / 4));
-            critical_memory = std::min(critical_memory + 64_MiB, static_cast<u64>(device_memory * 17 / 20));
-            minimum_memory = std::min(minimum_memory + 64_MiB, static_cast<u64>(device_memory / 2));
-        }
-        else {
-            expected_memory = std::min(expected_memory + 64_MiB, static_cast<u64>(device_memory - 1_GiB));
-            critical_memory = std::min(critical_memory + 64_MiB, static_cast<u64>(device_memory - 256_MiB));
-            minimum_memory = std::min(minimum_memory + 64_MiB, static_cast<u64>(device_memory / 2));
-        }
+        expected_memory = std::min(std::max(expected_memory + 64_MiB, total_used_memory + 8_MiB), static_cast<u64>(device_memory * 3 / 4));
+        critical_memory = std::min(critical_memory + 64_MiB, static_cast<u64>(device_memory * 17 / 20));
+        minimum_memory = std::min(minimum_memory + 64_MiB, static_cast<u64>(device_memory / 2));
         if (expected_memory != prev_expect || critical_memory != prev_critical){
             LOG_INFO(HW_GPU, "Texture cache device memory limits: min {} expected {} critical {} used {}",
              minimum_memory, expected_memory, critical_memory, total_used_memory);
@@ -280,7 +272,7 @@ void TextureCache<P>::RunGarbageCollector() {
         expected_memory = std::max(expected_memory - 4_MiB, static_cast<u64>(device_memory - (6 * 4_GiB / 10)));
     }
 
-    if (near_min && first_expect && less_aggressive_gc) {
+    if (near_min && first_expect) {
         minimum_memory = std::max(minimum_memory - 4_MiB,
         static_cast<u64>((device_memory - std::min(device_memory, 4_GiB)) / 2));
     }
@@ -289,7 +281,7 @@ void TextureCache<P>::RunGarbageCollector() {
     Configure(false);
     lru_cache.ForEachItemBelow(frame_tick - ticks_to_destroy, Cleanup);
 
-    if (!high_priority_mode && old_timer && frame_tick % 35 == 0) {
+    if (less_aggressive_gc && !high_priority_mode && old_timer && frame_tick % 35 == 0) {
         lru_cache.ForEachItemBelow(frame_tick - ticks_to_destroy_old, clean_up_old);
     }
 
