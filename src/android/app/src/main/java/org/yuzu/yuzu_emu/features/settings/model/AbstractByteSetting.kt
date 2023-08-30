@@ -3,8 +3,8 @@
 
 package org.yuzu.yuzu_emu.features.settings.model
 
-import androidx.lifecycle.ViewModel
+interface AbstractByteSetting : AbstractSetting {
+    val byte: Byte
 
-class SettingsViewModel : ViewModel() {
-    val settings = Settings()
+    fun setByte(value: Byte)
 }
