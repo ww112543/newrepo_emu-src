@@ -201,8 +201,6 @@ add_executable(yuzu
     multiplayer/state.cpp
     multiplayer/state.h
     multiplayer/validation.h
-    play_time_manager.cpp
-    play_time_manager.h
     precompiled_headers.h
     qt_common.cpp
     qt_common.h

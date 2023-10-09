@@ -157,7 +157,6 @@ static FileSys::VirtualFile VfsDirectoryCreateFileWrapper(const FileSys::Virtual
 #include "yuzu/install_dialog.h"
 #include "yuzu/loading_screen.h"
 #include "yuzu/main.h"
-#include "yuzu/play_time_manager.h"
 #include "yuzu/startup_checks.h"
 #include "yuzu/uisettings.h"
 #include "yuzu/util/clickable_label.h"
@@ -345,8 +344,6 @@ GMainWindow::GMainWindow(std::unique_ptr<QtConfig> config_, bool has_broken_vulk
 
     SetDiscordEnabled(UISettings::values.enable_discord_presence.GetValue());
     discord_rpc->Update();
-
-    play_time_manager = std::make_unique<PlayTime::PlayTimeManager>(system->GetProfileManager());
 
     system->GetRoomNetwork().Init();
 
@@ -1004,7 +1001,7 @@ void GMainWindow::InitializeWidgets() {
     render_window = new GRenderWindow(this, emu_thread.get(), input_subsystem, *system);
     render_window->hide();
 
-    game_list = new GameList(vfs, provider.get(), *play_time_manager, *system, this);
+    game_list = new GameList(vfs, provider.get(), *system, this);
     ui->horizontalLayout->addWidget(game_list);
 
     game_list_placeholder = new GameListPlaceholder(this);
@@ -1487,8 +1484,6 @@ void GMainWindow::ConnectWidgetEvents() {
     connect(game_list, &GameList::RemoveInstalledEntryRequested, this,
             &GMainWindow::OnGameListRemoveInstalledEntry);
     connect(game_list, &GameList::RemoveFileRequested, this, &GMainWindow::OnGameListRemoveFile);
-    connect(game_list, &GameList::RemovePlayTimeRequested, this,
-            &GMainWindow::OnGameListRemovePlayTimeData);
     connect(game_list, &GameList::DumpRomFSRequested, this, &GMainWindow::OnGameListDumpRomFS);
     connect(game_list, &GameList::VerifyIntegrityRequested, this,
             &GMainWindow::OnGameListVerifyIntegrity);
@@ -2214,7 +2209,6 @@ void GMainWindow::ShutdownGame() {
         return;
     }
 
-    play_time_manager->Stop();
     OnShutdownBegin();
     OnEmulationStopTimeExpired();
     OnEmulationStopped();
@@ -2567,17 +2561,6 @@ void GMainWindow::OnGameListRemoveFile(u64 program_id, GameListRemoveTarget targ
         RemoveCacheStorage(program_id);
         break;
     }
-}
-
-void GMainWindow::OnGameListRemovePlayTimeData(u64 program_id) {
-    if (QMessageBox::question(this, tr("Remove Play Time Data"), tr("Reset play time?"),
-                              QMessageBox::Yes | QMessageBox::No,
-                              QMessageBox::No) != QMessageBox::Yes) {
-        return;
-    }
-
-    play_time_manager->ResetProgramPlayTime(program_id);
-    game_list->PopulateAsync(UISettings::values.game_dirs);
 }
 
 void GMainWindow::RemoveTransferableShaderCache(u64 program_id, GameListRemoveTarget target) {
@@ -3416,9 +3399,6 @@ void GMainWindow::OnStartGame() {
     UpdateMenuState();
     OnTasStateChanged();
 
-    play_time_manager->SetProgramId(system->GetApplicationProcessProgramID());
-    play_time_manager->Start();
-
     discord_rpc->Update();
 
 #ifdef __unix__
@@ -3441,7 +3421,6 @@ void GMainWindow::OnRestartGame() {
 
 void GMainWindow::OnPauseGame() {
     emu_thread->SetRunning(false);
-    play_time_manager->Stop();
     UpdateMenuState();
     AllowOSSleep();
 
@@ -3462,9 +3441,6 @@ void GMainWindow::OnPauseContinueGame() {
 
 void GMainWindow::OnStopGame() {
     if (ConfirmShutdownGame()) {
-        play_time_manager->Stop();
-        // Update game list to show new play time
-        game_list->PopulateAsync(UISettings::values.game_dirs);
         if (OnShutdownBegin()) {
             OnShutdownBeginDialog();
         } else {

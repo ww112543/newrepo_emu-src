@@ -15,7 +15,6 @@
 
 #include "common/thread.h"
 #include "yuzu/compatibility_list.h"
-#include "yuzu/play_time_manager.h"
 
 namespace Core {
 class System;
@@ -40,9 +39,7 @@ public:
     explicit GameListWorker(std::shared_ptr<FileSys::VfsFilesystem> vfs_,
                             FileSys::ManualContentProvider* provider_,
                             QVector<UISettings::GameDir>& game_dirs_,
-                            const CompatibilityList& compatibility_list_,
-                            const PlayTime::PlayTimeManager& play_time_manager_,
-                            Core::System& system_);
+                            const CompatibilityList& compatibility_list_, Core::System& system_);
     ~GameListWorker() override;
 
     /// Starts the processing of directory tree information.
@@ -80,7 +77,6 @@ private:
     FileSys::ManualContentProvider* provider;
     QVector<UISettings::GameDir>& game_dirs;
     const CompatibilityList& compatibility_list;
-    const PlayTime::PlayTimeManager& play_time_manager;
 
     QStringList watch_list;
 

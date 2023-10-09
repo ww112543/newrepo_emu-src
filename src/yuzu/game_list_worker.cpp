@@ -195,7 +195,6 @@ QList<QStandardItem*> MakeGameListEntry(const std::string& path, const std::stri
                                         const std::size_t size, const std::vector<u8>& icon,
                                         Loader::AppLoader& loader, u64 program_id,
                                         const CompatibilityList& compatibility_list,
-                                        const PlayTime::PlayTimeManager& play_time_manager,
                                         const FileSys::PatchManager& patch) {
     const auto it = FindMatchingCompatibilityEntry(compatibility_list, program_id);
 
@@ -214,7 +213,6 @@ QList<QStandardItem*> MakeGameListEntry(const std::string& path, const std::stri
         new GameListItemCompat(compatibility),
         new GameListItem(file_type_string),
         new GameListItemSize(size),
-        new GameListItemPlayTime(play_time_manager.GetPlayTime(program_id)),
     };
 
     const auto patch_versions = GetGameListCachedObject(
@@ -230,12 +228,9 @@ QList<QStandardItem*> MakeGameListEntry(const std::string& path, const std::stri
 GameListWorker::GameListWorker(FileSys::VirtualFilesystem vfs_,
                                FileSys::ManualContentProvider* provider_,
                                QVector<UISettings::GameDir>& game_dirs_,
-                               const CompatibilityList& compatibility_list_,
-                               const PlayTime::PlayTimeManager& play_time_manager_,
-                               Core::System& system_)
+                               const CompatibilityList& compatibility_list_, Core::System& system_)
     : vfs{std::move(vfs_)}, provider{provider_}, game_dirs{game_dirs_},
-      compatibility_list{compatibility_list_}, play_time_manager{play_time_manager_}, system{
-                                                                                          system_} {
+      compatibility_list{compatibility_list_}, system{system_} {
     // We want the game list to manage our lifetime.
     setAutoDelete(false);
 }
@@ -329,7 +324,7 @@ void GameListWorker::AddTitlesToGameList(GameListDir* parent_dir) {
         }
 
         auto entry = MakeGameListEntry(file->GetFullPath(), name, file->GetSize(), icon, *loader,
-                                       program_id, compatibility_list, play_time_manager, patch);
+                                       program_id, compatibility_list, patch);
         RecordEvent([=](GameList* game_list) { game_list->AddEntry(entry, parent_dir); });
     }
 }
@@ -406,7 +401,7 @@ void GameListWorker::ScanFileSystem(ScanTarget target, const std::string& dir_pa
 
                         auto entry = MakeGameListEntry(
                             physical_name, name, Common::FS::GetSize(physical_name), icon, *loader,
-                            id, compatibility_list, play_time_manager, patch);
+                            id, compatibility_list, patch);
 
                         RecordEvent(
                             [=](GameList* game_list) { game_list->AddEntry(entry, parent_dir); });
@@ -423,7 +418,7 @@ void GameListWorker::ScanFileSystem(ScanTarget target, const std::string& dir_pa
 
                     auto entry = MakeGameListEntry(
                         physical_name, name, Common::FS::GetSize(physical_name), icon, *loader,
-                        program_id, compatibility_list, play_time_manager, patch);
+                        program_id, compatibility_list, patch);
 
                     RecordEvent(
                         [=](GameList* game_list) { game_list->AddEntry(entry, parent_dir); });
