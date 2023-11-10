@@ -31,8 +31,8 @@
 [submodule "externals/xbyak"]
     path = externals/xbyak
     url = https://github.com/herumi/xbyak.git
-[submodule "externals/opus/opus"]
-	path = externals/opus/opus
+[submodule "externals/opus"]
+	path = externals/opus
 	url = https://github.com/xiph/opus.git
 [submodule "externals/SDL"]
 	path = externals/SDL
