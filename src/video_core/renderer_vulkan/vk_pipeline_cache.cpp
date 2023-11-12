@@ -473,8 +473,6 @@ void PipelineCache::LoadDiskResources(u64 title_id, std::stop_token stop_loading
         LOG_ERROR(Common_Filesystem, "Failed to create pipeline cache directories");
         return;
     }
-    pipeline_cache_filename = base_dir / "vulkan.bin";
-
 #ifdef ANDROID
     if (!use_disk_shader_cache && use_vulkan_pipeline_cache) {
         vulkan_pipeline_cache_filename = base_dir / "vulkan_pipelines.bin";
@@ -490,7 +488,10 @@ void PipelineCache::LoadDiskResources(u64 title_id, std::stop_token stop_loading
     else {
         return;
     }
-#else
+#endif
+    pipeline_cache_filename = base_dir / "vulkan.bin";
+
+#ifndef ANDROID
     if (use_vulkan_pipeline_cache) {
         vulkan_pipeline_cache_filename = base_dir / "vulkan_pipelines.bin";
         vulkan_pipeline_cache =
