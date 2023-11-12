@@ -335,12 +335,10 @@ void EmulationSession::RunEmulation() {
     }
 
     // Load the disk shader cache.
-    if (Settings::values.use_disk_shader_cache.GetValue()) {
-        LoadDiskCacheProgress(VideoCore::LoadCallbackStage::Prepare, 0, 0);
-        m_system.Renderer().ReadRasterizer()->LoadDiskResources(
-            m_system.GetApplicationProcessProgramID(), std::stop_token{}, LoadDiskCacheProgress);
-        LoadDiskCacheProgress(VideoCore::LoadCallbackStage::Complete, 0, 0);
-    }
+    LoadDiskCacheProgress(VideoCore::LoadCallbackStage::Prepare, 0, 0);
+    m_system.Renderer().ReadRasterizer()->LoadDiskResources(
+        m_system.GetApplicationProcessProgramID(), std::stop_token{}, LoadDiskCacheProgress);
+    LoadDiskCacheProgress(VideoCore::LoadCallbackStage::Complete, 0, 0);
 
     void(m_system.Run());
 
