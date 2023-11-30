@@ -103,7 +103,7 @@ jobs:
         uses: humbletim/setup-vulkan-sdk@v1.2.0
         with:
           vulkan-query-version: latest
-          vulkan-components: Vulkan-Headers, Glslang
+          vulkan-components: SPIRV-Tools, Glslang
           vulkan-use-cache: true
 
       #Install CMake
@@ -129,7 +129,7 @@ jobs:
           gl=${{ (inputs || github.event.inputs).GL }}
           fpc=${{ (inputs || github.event.inputs).contract-fp }}
           fpt=${{ (inputs || github.event.inputs).type-fp }}
-          comp_args_cxx="/DWIN32 /D_WINDOWS /GR /EHsc /Gw /GA /Gr /Ob3 "
+          comp_args_cxx="/DWIN32 /D_WINDOWS /GR /EHsc /Gw /Ob3 "
           cmake_args="-G "
           bsuffix=""
           if [ "$os" == "windows-latest" ]
