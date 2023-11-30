@@ -187,12 +187,12 @@ android {
                 )
 
                 cFlags(
-                    "-march=armv8.6a",
+                    "-march=armv8.7a",
                     "-pipe",
                     "-funsafe-math-optimizations"
                 )
                 cppFlags(
-                    "-march=armv8.6a",
+                    "-march=armv8.7a",
                     "-pipe",
                     "-funsafe-math-optimizations"
                 )
