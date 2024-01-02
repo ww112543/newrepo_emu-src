@@ -5,13 +5,17 @@
 
 #include "core/hle/service/hid/controllers/controller_base.h"
 
-namespace Service::HID {
-struct CommonHeader;
+namespace Core::HID {
+class EmulatedDevices;
+struct MouseState;
+struct AnalogStickState;
+} // namespace Core::HID
 
-class Controller_Stubbed final : public ControllerBase {
+namespace Service::HID {
+class DebugMouse final : public ControllerBase {
 public:
-    explicit Controller_Stubbed(Core::HID::HIDCore& hid_core_, CommonHeader& ring_lifo_header);
-    ~Controller_Stubbed() override;
+    explicit DebugMouse(Core::HID::HIDCore& hid_core_);
+    ~DebugMouse() override;
 
     // Called when the controller is initialized
     void OnInit() override;
@@ -23,7 +27,8 @@ public:
     void OnUpdate(const Core::Timing::CoreTiming& core_timing) override;
 
 private:
-    CommonHeader& header;
-    bool smart_update{};
+    Core::HID::MouseState next_state{};
+    Core::HID::AnalogStickState last_mouse_wheel_state{};
+    Core::HID::EmulatedDevices* emulated_devices = nullptr;
 };
 } // namespace Service::HID
