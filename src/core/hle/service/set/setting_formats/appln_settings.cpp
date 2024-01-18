@@ -1,12 +1,16 @@
 // SPDX-FileCopyrightText: Copyright 2018 yuzu Emulator Project
 // SPDX-License-Identifier: GPL-2.0-or-later
 
-#include "core/hle/service/set/appln_settings.h"
+#include "core/hle/service/set/setting_formats/appln_settings.h"
 
 namespace Service::Set {
 
 ApplnSettings DefaultApplnSettings() {
-    return {};
+    ApplnSettings settings{};
+
+    settings.mii_author_id = Common::UUID::MakeDefault();
+
+    return settings;
 }
 
 } // namespace Service::Set
