@@ -54,7 +54,7 @@ void BufferCache<P>::CacheSizeAdjust() {
     bool aggressive_mode = total_used_memory >= critical_memory;
     bool near_expect = total_used_memory >= minimum_memory - 64_MiB && !high_priority_mode;
     bool large_increase = high_priority_mode && total_used_memory >= minimum_memory + 256_MiB;
-    const u64 device_memory = static_cast<u64>(runtime.GetDeviceLocalMemory());
+    const u64 device_local_memory = static_cast<u64>(runtime.GetDeviceLocalMemory());
     const u64 prev_expect = minimum_memory;
     const u64 prev_critical = critical_memory;
 
@@ -89,12 +89,12 @@ void BufferCache<P>::CacheSizeAdjust() {
 
     if (!reach_expect && (near_expect || (high_priority_mode && !large_increase) || exc_expect)) {
         if (less_aggressive_gc) {
-            minimum_memory = std::min(std::max(minimum_memory + 64_MiB, total_used_memory + 8_MiB), static_cast<u64>(device_memory * 3 / 4));
-            critical_memory = std::min(critical_memory + 64_MiB, static_cast<u64>(device_memory * 17 / 20));
+            minimum_memory = std::min(std::max(minimum_memory + 64_MiB, total_used_memory + 8_MiB), static_cast<u64>(device_local_memory * 3 / 4));
+            critical_memory = std::min(critical_memory + 64_MiB, static_cast<u64>(device_local_memory * 17 / 20));
         }
         else {
-            minimum_memory = std::min(minimum_memory + 64_MiB, static_cast<u64>(device_memory - 1_GiB));
-            critical_memory = std::min(critical_memory + 64_MiB, static_cast<u64>(device_memory - 256_MiB));
+            minimum_memory = std::min(minimum_memory + 64_MiB, static_cast<u64>(device_local_memory - 1_GiB));
+            critical_memory = std::min(critical_memory + 64_MiB, static_cast<u64>(device_local_memory - 256_MiB));
         }
         if (minimum_memory != prev_expect || critical_memory != prev_critical){
             LOG_INFO(HW_GPU, "Buffer cache device memory limits: expected {} critical {} used {}",
@@ -154,7 +154,7 @@ void BufferCache<P>::TickFrame() {
     channel_state->uniform_buffer_skip_cache_size = skip_preferred ? DEFAULT_SKIP_CACHE_SIZE : 0;
 
     // If we can obtain the memory info, use it instead of the estimate.
-    const u64 device_memory = runtime.GetDeviceLocalMemory();
+    const u64 device_local_memory = runtime.GetDeviceLocalMemory();
     if (runtime.CanReportMemoryUsage()) {
         total_used_memory = runtime.GetDeviceMemoryUsage();
     }
@@ -175,7 +175,7 @@ void BufferCache<P>::TickFrame() {
             reach_expect = false;
         }
         if (total_used_memory <= minimum_memory - 256_MiB && first_expect) {
-            minimum_memory = std::max(minimum_memory - 4_MiB, static_cast<u64>(device_memory - (6 * 4_GiB / 10) + 128_MiB));
+            minimum_memory = std::max(minimum_memory - 4_MiB, static_cast<u64>(device_local_memory - (6 * 4_GiB / 10) + 128_MiB));
         }
     }
     ++frame_tick;

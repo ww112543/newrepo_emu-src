@@ -76,7 +76,7 @@ void TextureCache<P>::CacheSizeAdjust() {
     bool aggressive_mode = total_used_memory >= critical_memory;
     bool near_expect = total_used_memory >= expected_memory - 64_MiB && !high_priority_mode;
     bool large_increase = high_priority_mode && total_used_memory >= expected_memory + 256_MiB;
-    const u64 device_memory = static_cast<u64>(runtime.GetDeviceLocalMemory());
+    const u64 device_local_memory = static_cast<u64>(runtime.GetDeviceLocalMemory());
     const u64 prev_expect = expected_memory;
     const u64 prev_critical = critical_memory;
 
@@ -118,9 +118,9 @@ void TextureCache<P>::CacheSizeAdjust() {
     }
 
     if (!reach_expect && (near_expect || (high_priority_mode && !large_increase) || exc_expect)) {
-        expected_memory = std::min(std::max(expected_memory + 64_MiB, total_used_memory + 8_MiB), static_cast<u64>(device_memory * 3 / 4));
-        critical_memory = std::min(critical_memory + 64_MiB, static_cast<u64>(device_memory * 17 / 20));
-        minimum_memory = std::min(minimum_memory + 64_MiB, static_cast<u64>(device_memory / 2));
+        expected_memory = std::min(std::max(expected_memory + 64_MiB, total_used_memory + 8_MiB), static_cast<u64>(device_local_memory * 3 / 4));
+        critical_memory = std::min(critical_memory + 64_MiB, static_cast<u64>(device_local_memory * 17 / 20));
+        minimum_memory = std::min(minimum_memory + 64_MiB, static_cast<u64>(device_local_memory / 2));
         if (expected_memory != prev_expect || critical_memory != prev_critical){
             LOG_INFO(HW_GPU, "Texture cache device memory limits: min {} expected {} critical {} used {}",
              minimum_memory, expected_memory, critical_memory, total_used_memory);
@@ -128,8 +128,8 @@ void TextureCache<P>::CacheSizeAdjust() {
     }
     /*
     else if (aggressive_mode && large_increase && less_aggressive_gc) {
-        expected_memory = std::max(std::min(expected_memory + 128_MiB, static_cast<u64>(device_memory * 7 / 10)), expected_memory);
-        critical_memory = std::max(std::min(critical_memory + 128_MiB, static_cast<u64>(device_memory * 4 / 5)), critical_memory);
+        expected_memory = std::max(std::min(expected_memory + 128_MiB, static_cast<u64>(device_local_memory * 7 / 10)), expected_memory);
+        critical_memory = std::max(std::min(critical_memory + 128_MiB, static_cast<u64>(device_local_memory * 4 / 5)), critical_memory);
     }
     */
 
@@ -148,7 +148,7 @@ void TextureCache<P>::RunGarbageCollector() {
     bool near_min = false;
     bool below_expect = false;
     const bool less_aggressive_gc = Settings::values.less_aggressive_gc.GetValue();
-    const u64 device_memory = static_cast<u64>(runtime.GetDeviceLocalMemory());
+    const u64 device_local_memory = static_cast<u64>(runtime.GetDeviceLocalMemory());
     u64 ticks_to_destroy = 0;
     size_t num_iterations = 0;
     size_t max_num_iterations = 20;
@@ -269,12 +269,12 @@ void TextureCache<P>::RunGarbageCollector() {
         first_expect = true;
 
     if (below_expect && first_expect) {
-        expected_memory = std::max(expected_memory - 4_MiB, static_cast<u64>(device_memory - (6 * 4_GiB / 10)));
+        expected_memory = std::max(expected_memory - 4_MiB, static_cast<u64>(device_local_memory - (6 * 4_GiB / 10)));
     }
 
     if (near_min && first_expect) {
         minimum_memory = std::max(minimum_memory - 4_MiB,
-        static_cast<u64>((device_memory - std::min(device_memory, 4_GiB)) / 2));
+        static_cast<u64>((device_local_memory - std::min(device_local_memory, 4_GiB)) / 2));
     }
 
     // Try to remove anything old enough and not high priority.
@@ -298,7 +298,7 @@ void TextureCache<P>::TickFrame() {
         old_timer = !old_timer;
     }
     // If we can obtain the memory info, use it instead of the estimate.
-    const u64 device_memory = runtime.GetDeviceLocalMemory();
+    const u64 device_local_memory = runtime.GetDeviceLocalMemory();
     if (runtime.CanReportMemoryUsage()) {
         total_used_memory = runtime.GetDeviceMemoryUsage();
     }
@@ -310,7 +310,7 @@ void TextureCache<P>::TickFrame() {
     }
     else if (first_expect && frame_tick % 120 == 0) {
         minimum_memory = std::max(minimum_memory - 256_MiB,
-        static_cast<u64>((device_memory - std::min(device_memory, 4_GiB)) / 2));
+        static_cast<u64>((device_local_memory - std::min(device_local_memory, 4_GiB)) / 2));
     }
 
     sentenced_images.Tick();
