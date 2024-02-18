@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2023 yuzu Emulator Project
 // SPDX-License-Identifier: GPL-2.0-or-later
 
-package org.yuzu.yuzu_emu.fragments
+package org.yuzu.yuzu_emu.features.settings.ui
 
 import android.content.Context
 import android.os.Bundle
@@ -15,21 +15,17 @@ import androidx.core.view.updatePadding
 import androidx.core.widget.doOnTextChanged
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.lifecycleScope
-import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.material.divider.MaterialDividerItemDecoration
 import com.google.android.material.transition.MaterialSharedAxis
 import info.debatty.java.stringsimilarity.Cosine
-import kotlinx.coroutines.launch
 import org.yuzu.yuzu_emu.R
 import org.yuzu.yuzu_emu.databinding.FragmentSettingsSearchBinding
 import org.yuzu.yuzu_emu.features.settings.model.view.SettingsItem
-import org.yuzu.yuzu_emu.features.settings.ui.SettingsAdapter
-import org.yuzu.yuzu_emu.model.SettingsViewModel
 import org.yuzu.yuzu_emu.utils.NativeConfig
+import org.yuzu.yuzu_emu.utils.ViewUtils.setVisible
 import org.yuzu.yuzu_emu.utils.ViewUtils.updateMargins
+import org.yuzu.yuzu_emu.utils.collect
 
 class SettingsSearchFragment : Fragment() {
     private var _binding: FragmentSettingsSearchBinding? = null
@@ -85,14 +81,10 @@ class SettingsSearchFragment : Fragment() {
             search()
             binding.settingsList.smoothScrollToPosition(0)
         }
-        viewLifecycleOwner.lifecycleScope.launch {
-            repeatOnLifecycle(Lifecycle.State.CREATED) {
-                settingsViewModel.shouldReloadSettingsList.collect {
-                    if (it) {
-                        settingsViewModel.setShouldReloadSettingsList(false)
-                        search()
-                    }
-                }
+        settingsViewModel.shouldReloadSettingsList.collect(viewLifecycleOwner) {
+            if (it) {
+                settingsViewModel.setShouldReloadSettingsList(false)
+                search()
             }
         }
 
@@ -108,10 +100,9 @@ class SettingsSearchFragment : Fragment() {
 
     private fun search() {
         val searchTerm = binding.searchText.text.toString().lowercase()
-        binding.clearButton.visibility =
-            if (searchTerm.isEmpty()) View.INVISIBLE else View.VISIBLE
+        binding.clearButton.setVisible(visible = searchTerm.isNotEmpty(), gone = false)
         if (searchTerm.isEmpty()) {
-            binding.noResultsView.visibility = View.VISIBLE
+            binding.noResultsView.setVisible(visible = false, gone = false)
             settingsAdapter?.submitList(emptyList())
             return
         }
@@ -119,7 +110,7 @@ class SettingsSearchFragment : Fragment() {
         val baseList = SettingsItem.settingsItems
         val similarityAlgorithm = if (searchTerm.length > 2) Cosine() else Cosine(1)
         val sortedList: List<SettingsItem> = baseList.mapNotNull { item ->
-            val title = getString(item.value.nameId).lowercase()
+            val title = item.value.title.lowercase()
             val similarity = similarityAlgorithm.similarity(searchTerm, title)
             if (similarity > 0.08) {
                 Pair(similarity, item)
@@ -138,8 +129,7 @@ class SettingsSearchFragment : Fragment() {
             optionalSetting
         }
         settingsAdapter?.submitList(sortedList)
-        binding.noResultsView.visibility =
-            if (sortedList.isEmpty()) View.VISIBLE else View.INVISIBLE
+        binding.noResultsView.setVisible(visible = sortedList.isEmpty(), gone = false)
     }
 
     private fun focusSearch() {

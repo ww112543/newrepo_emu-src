@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2023 yuzu Emulator Project
 // SPDX-License-Identifier: GPL-2.0-or-later
 
-package org.yuzu.yuzu_emu.fragments
+package org.yuzu.yuzu_emu.features.settings.ui
 
 import android.app.Dialog
 import android.content.DialogInterface
@@ -11,19 +11,21 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.activityViewModels
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.lifecycleScope
-import androidx.lifecycle.repeatOnLifecycle
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.slider.Slider
-import kotlinx.coroutines.launch
 import org.yuzu.yuzu_emu.R
 import org.yuzu.yuzu_emu.databinding.DialogSliderBinding
+import org.yuzu.yuzu_emu.features.input.NativeInput
+import org.yuzu.yuzu_emu.features.input.model.AnalogDirection
+import org.yuzu.yuzu_emu.features.settings.model.view.AnalogInputSetting
+import org.yuzu.yuzu_emu.features.settings.model.view.ButtonInputSetting
+import org.yuzu.yuzu_emu.features.settings.model.view.IntSingleChoiceSetting
 import org.yuzu.yuzu_emu.features.settings.model.view.SettingsItem
 import org.yuzu.yuzu_emu.features.settings.model.view.SingleChoiceSetting
 import org.yuzu.yuzu_emu.features.settings.model.view.SliderSetting
 import org.yuzu.yuzu_emu.features.settings.model.view.StringSingleChoiceSetting
-import org.yuzu.yuzu_emu.model.SettingsViewModel
+import org.yuzu.yuzu_emu.utils.ParamPackage
+import org.yuzu.yuzu_emu.utils.collect
 
 class SettingsDialogFragment : DialogFragment(), DialogInterface.OnClickListener {
     private var type = 0
@@ -50,8 +52,49 @@ class SettingsDialogFragment : DialogFragment(), DialogInterface.OnClickListener
                 MaterialAlertDialogBuilder(requireContext())
                     .setMessage(R.string.reset_setting_confirmation)
                     .setPositiveButton(android.R.string.ok) { _: DialogInterface, _: Int ->
-                        settingsViewModel.clickedItem!!.setting.reset()
-                        settingsViewModel.setAdapterItemChanged(position)
+                        when (val item = settingsViewModel.clickedItem) {
+                            is AnalogInputSetting -> {
+                                val stickParam = NativeInput.getStickParam(
+                                    item.playerIndex,
+                                    item.nativeAnalog
+                                )
+                                if (stickParam.get("engine", "") == "analog_from_button") {
+                                    when (item.analogDirection) {
+                                        AnalogDirection.Up -> stickParam.erase("up")
+                                        AnalogDirection.Down -> stickParam.erase("down")
+                                        AnalogDirection.Left -> stickParam.erase("left")
+                                        AnalogDirection.Right -> stickParam.erase("right")
+                                    }
+                                    NativeInput.setStickParam(
+                                        item.playerIndex,
+                                        item.nativeAnalog,
+                                        stickParam
+                                    )
+                                    settingsViewModel.setAdapterItemChanged(position)
+                                } else {
+                                    NativeInput.setStickParam(
+                                        item.playerIndex,
+                                        item.nativeAnalog,
+                                        ParamPackage()
+                                    )
+                                    settingsViewModel.setDatasetChanged(true)
+                                }
+                            }
+
+                            is ButtonInputSetting -> {
+                                NativeInput.setButtonParam(
+                                    item.playerIndex,
+                                    item.nativeButton,
+                                    ParamPackage()
+                                )
+                                settingsViewModel.setAdapterItemChanged(position)
+                            }
+
+                            else -> {
+                                settingsViewModel.clickedItem!!.setting.reset()
+                                settingsViewModel.setAdapterItemChanged(position)
+                            }
+                        }
                     }
                     .setNegativeButton(android.R.string.cancel, null)
                     .create()
@@ -61,7 +104,7 @@ class SettingsDialogFragment : DialogFragment(), DialogInterface.OnClickListener
                 val item = settingsViewModel.clickedItem as SingleChoiceSetting
                 val value = getSelectionForSingleChoiceValue(item)
                 MaterialAlertDialogBuilder(requireContext())
-                    .setTitle(item.nameId)
+                    .setTitle(item.title)
                     .setSingleChoiceItems(item.choicesId, value, this)
                     .create()
             }
@@ -81,7 +124,7 @@ class SettingsDialogFragment : DialogFragment(), DialogInterface.OnClickListener
                 }
 
                 MaterialAlertDialogBuilder(requireContext())
-                    .setTitle(item.nameId)
+                    .setTitle(item.title)
                     .setView(sliderBinding.root)
                     .setPositiveButton(android.R.string.ok, this)
                     .setNegativeButton(android.R.string.cancel, defaultCancelListener)
@@ -91,8 +134,16 @@ class SettingsDialogFragment : DialogFragment(), DialogInterface.OnClickListener
             SettingsItem.TYPE_STRING_SINGLE_CHOICE -> {
                 val item = settingsViewModel.clickedItem as StringSingleChoiceSetting
                 MaterialAlertDialogBuilder(requireContext())
-                    .setTitle(item.nameId)
-                    .setSingleChoiceItems(item.choices, item.selectValueIndex, this)
+                    .setTitle(item.title)
+                    .setSingleChoiceItems(item.choices, item.selectedValueIndex, this)
+                    .create()
+            }
+
+            SettingsItem.TYPE_INT_SINGLE_CHOICE -> {
+                val item = settingsViewModel.clickedItem as IntSingleChoiceSetting
+                MaterialAlertDialogBuilder(requireContext())
+                    .setTitle(item.title)
+                    .setSingleChoiceItems(item.choices, item.selectedValueIndex, this)
                     .create()
             }
 
@@ -115,17 +166,11 @@ class SettingsDialogFragment : DialogFragment(), DialogInterface.OnClickListener
         super.onViewCreated(view, savedInstanceState)
         when (type) {
             SettingsItem.TYPE_SLIDER -> {
-                viewLifecycleOwner.lifecycleScope.launch {
-                    repeatOnLifecycle(Lifecycle.State.CREATED) {
-                        settingsViewModel.sliderTextValue.collect {
-                            sliderBinding.textValue.text = it
-                        }
-                    }
-                    repeatOnLifecycle(Lifecycle.State.CREATED) {
-                        settingsViewModel.sliderProgress.collect {
-                            sliderBinding.slider.value = it.toFloat()
-                        }
-                    }
+                settingsViewModel.sliderTextValue.collect(viewLifecycleOwner) {
+                    sliderBinding.textValue.text = it
+                }
+                settingsViewModel.sliderProgress.collect(viewLifecycleOwner) {
+                    sliderBinding.slider.value = it.toFloat()
                 }
             }
         }
@@ -141,6 +186,12 @@ class SettingsDialogFragment : DialogFragment(), DialogInterface.OnClickListener
 
             is StringSingleChoiceSetting -> {
                 val scSetting = settingsViewModel.clickedItem as StringSingleChoiceSetting
+                val value = scSetting.getValueAt(which)
+                scSetting.setSelectedValue(value)
+            }
+
+            is IntSingleChoiceSetting -> {
+                val scSetting = settingsViewModel.clickedItem as IntSingleChoiceSetting
                 val value = scSetting.getValueAt(which)
                 scSetting.setSelectedValue(value)
             }
