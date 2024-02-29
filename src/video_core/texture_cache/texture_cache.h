@@ -151,7 +151,7 @@ void TextureCache<P>::RunGarbageCollector() {
     const u64 device_local_memory = static_cast<u64>(runtime.GetDeviceLocalMemory());
     u64 ticks_to_destroy = 0;
     size_t num_iterations = 0;
-    size_t max_num_iterations = 20;
+    size_t max_num_iterations = 0;
     size_t num_iterations_old = 2;
     const u64 ticks_to_destroy_old = 1800ULL;
 
@@ -162,6 +162,7 @@ void TextureCache<P>::RunGarbageCollector() {
         below_expect = total_used_memory <= expected_memory - 256_MiB;
         ticks_to_destroy = aggressive_mode ? 10ULL : high_priority_mode ? 25ULL : 50ULL;
         num_iterations = aggressive_mode ? 40 : (high_priority_mode ? 20 : 10);
+        max_num_iterations = 20;
     };
     const auto Cleanup = [this, &num_iterations, &max_num_iterations, &high_priority_mode,
                           &aggressive_mode](ImageId image_id) {
